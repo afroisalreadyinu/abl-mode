@@ -1,0 +1,10 @@
+The abl-mode is for python programmers who do web development using a
+branch-based workflow and unit tests.
+
+To install, put abl.el in your elisp path, and include the
+following in your emacs configuration file:
+
+(require 'abl)
+
+Please look at the abl mode cheatsheet in the project repository for a list of customization options and key bindings.
+
