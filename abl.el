@@ -53,7 +53,7 @@
 
 ;; <<------------  Variables  -------------->>
 
-(defcustom vem-activate-command "vem_activate %s"
+(defcustom vem-activate-command "vem activate %s"
   "The command for activating a virtual environment")
 
 (defcustom vem-create-command "vem create %s"
@@ -76,6 +76,9 @@
   "This is the actual command which is executed for tests; the
   test command is formatted into it twice in order to get display
   of what actually happens in the shell buffer")
+
+(defcustom abl-python-executable "python"
+  "The executable used to install a package with.")
 
 ;; <<----------------  Here ends the customization -------------->>
 
@@ -257,7 +260,9 @@
 	(progn
 	  (run-shell-command (format vem-create-command new-vem-name) shell-name)
 	  (run-shell-command (format vem-activate-command new-vem-name) shell-name)
-	  (run-shell-command "python setup.py develop" shell-name)))
+	  (run-shell-command (format "%s setup.py develop" abl-python-executable)
+			     shell-name))
+      (run-shell-command (format vem-activate-command new-vem-name) shell-name))
     (if (not (string-equal new-vem-name name))
 	(progn (setq replacement-vems (cons '(name . new-vem-name) replacement-vems))
 	       (setq vem-name new-vem-name)))))
@@ -346,7 +351,7 @@ followed by a proper class name).")
   (let* ((test-command-torun (format test-command test-path))
 	 (shell-command (format complete-testrun-command test-command-torun test-command-torun))
 	 (real-branch-name (or branch-name abl-branch)))
-    (message (concat "Running test(s): " test-path))
+    (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
     (run-shell-command-for-branch shell-command real-branch-name)
     (setq last-test-run (cons test-path abl-branch))))
 
@@ -498,6 +503,7 @@ followed by a proper class name).")
 
 ;; <<------------  TODOS -------------->>
 
+;; - take to location in stack trace
 ;; - create tags file and find files in project.
 ;; - create etags file progressively by first finding all the code files in the dir
 ;; - don't do git branch for every new buffer; make an assoc-list of bases (works now, as an improvement)
