@@ -182,7 +182,9 @@
   (let* ((command (concat "cd " base-dir " && git branch"))
 	(git-output (shell-command-to-string command)))
     (if (string-equal git-output "")
-	(error "Looks like your git repository is empty (the output of git branch was empty). Please commit your changes and activate abl-mode again..")
+	(progn
+	  (message "Looks like your git repository is empty (the output of git branch was empty). Calling it 'none'.")
+	  "none")
       (string-match "\\* \\(.*\\)" git-output)
       (substring git-output (match-beginning 1) (match-end 1)))))
 
