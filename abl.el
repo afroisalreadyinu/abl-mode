@@ -38,7 +38,6 @@
     (define-key map (kbd "C-c r") 'run-current-branch)
     (define-key map (kbd "C-c t") 'run-test-at-point)
     (define-key map (kbd "C-c u") 'rerun-last-test)
-    (define-key map (kbd "C-c e") 'create-etags-file)
     (define-key map (kbd "C-c o") 'open-python-path-at-point)
     (define-key map (kbd "C-c a") 'revert-all-buffers)
     (define-key map (kbd "C-c w") 'display-branch)
