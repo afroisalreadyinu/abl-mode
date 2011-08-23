@@ -504,6 +504,8 @@ followed by a proper class name).")
 
 ;; <<------------  TODOS -------------->>
 
+;; - recreate virtual env
+;; - present status of test by reading stdout from proc or something
 ;; - take to location in stack trace
 ;; - create tags file and find files in project.
 ;; - create etags file progressively by first finding all the code files in the dir

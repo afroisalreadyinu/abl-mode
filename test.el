@@ -5,24 +5,41 @@
   (with-temp-buffer (insert string)
 		    (write-region (point-min) (point-max) file-path)))
 
+(defvar project-dir "aproject")
+(defvar test-file-name "test.py")
+
 (defun setup-git-tests (&optional base)
-  ;create git repo with setup.py and a test file
+  ;;create git repo with setup.py and a test file. the folder
+  ;;structure will look something like this (the temp directory name
+  ;;starting with abltest will be different):
+  ;; /tmp
+  ;;   |
+  ;;   - abltest18945
+  ;;        |
+  ;;        - .git
+  ;;        - setup.py (contents: blah)
+  ;;        - aproject
+  ;;             |
+  ;;             - test.py (contents: blah)
   (let* ((project-name "aproject")
-	 (base-dir (or base (make-temp-file "blah" 't)))
-	 (project-dir (concat-paths base-dir "aproject")))
+	 (base-dir (or base (make-temp-file "abltest" 't)))
+	 (project-dir (concat-paths base-dir project-dir)))
+    (if (not (file-exists-p base-dir)) (make-directory base-dir))
     (assert (index-of "Initialized empty Git repository"
 		      (shell-command-to-string
 		       (concat "git init " base-dir))))
-    (if (not (file-exists-p base-dir)) (make-directory base-dir))
     (make-directory project-dir)
     (write-to-file (concat-paths base-dir "setup.py") "blah")
-    (write-to-file (concat-paths project-dir "test.py") "blah")
+    (write-to-file (concat-paths project-dir test-file-name) "blah")
     base-dir))
 
 (defun commit-git (base-path)
-  (shell-command-to-string (format
-			    "cd %s && git add setup.py && git commit -am 'haha'"
-			    base-path)))
+  (shell-command-to-string
+   (format
+    "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
+    base-path
+    project-dir
+    test-file-name)))
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
@@ -30,6 +47,12 @@
 			    base-path branch-name branch-name)))
 
 (defun cleanup (path)
+  ;; rm -rf's a folder which begins with /tmp. you shouldn't put
+  ;; important stuff into /tmp.
+  (unless (starts-with path "/tmp")
+    (error
+     (format "Tried to cleanup a path (%s) not in /tmp; refusing to do so."
+	     path)))
   (shell-command-to-string
    (concat "rm -rf " path)))
 
