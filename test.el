@@ -7,6 +7,14 @@
 
 (defvar project-dir "aproject")
 (defvar test-file-name "test.py")
+(defvar output-file-path "/tmp/tc.txt")
+(defvar output-content "ABL MODE WAS HERE")
+(defvar test-file-content
+  (concat "class AblTest(object):\n"
+	   "    def test_abl_mode():\n"
+   (format "        f = open('%s')\n" output-file-path)
+   (format "        f.write('%s')\n" output-content)
+	   "        f.close()"))
 
 (defun setup-git-tests (&optional base)
   ;;create git repo with setup.py and a test file. the folder
@@ -21,6 +29,8 @@
   ;;        - aproject
   ;;             |
   ;;             - test.py (contents: blah)
+  ;;             - __init__.py (contents: #nothing)
+
   (let* ((project-name "aproject")
 	 (base-dir (or base (make-temp-file "abltest" 't)))
 	 (project-dir (concat-paths base-dir project-dir)))
@@ -30,7 +40,8 @@
 		       (concat "git init " base-dir))))
     (make-directory project-dir)
     (write-to-file (concat-paths base-dir "setup.py") "blah")
-    (write-to-file (concat-paths project-dir test-file-name) "blah")
+    (write-to-file (concat-paths project-dir test-file-name) test-file-content)
+    (write-to-file (concat-paths project-dir "__init__.py") "#nothing")
     base-dir))
 
 (defun commit-git (base-path)
@@ -173,4 +184,12 @@
       (should (string-equal project-name (nth 3 abl-values))))))
 
 
-
+(ert-deftest test-git-abl-functionality ()
+  ;;this test checks whether the two main functionalities of running
+  ;;tests and running a server work
+  (abl-git-test
+    (commit-git base-dir)
+    (find-file test-file-path)
+    (goto-char (point-max))
+    (let ((test-path (get-test-entity)))
+      (should (string-equal test-path "aproject.test:AblTest.test_abl_mode")))))
