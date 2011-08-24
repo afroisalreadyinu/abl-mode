@@ -134,42 +134,43 @@
      (buffer-local-value 'project-name buffer)
      (buffer-local-value 'vem-name buffer))))
 
+(defmacro abl-git-test (&rest tests-etc)
+  `(let* ((base-dir (setup-git-tests))
+	  (project-name (last-path-comp base-dir))
+	  (test-file-path (concat-paths base-dir "aproject" "test.py")))
+     (unwind-protect
+	 (progn
+	   ,@tests-etc)
+	 (cleanup base-dir))))
 
 (ert-deftest test-empty-git-abl ()
-  (let* ((base-dir (setup-git-tests))
-	 (project-name (last-path-comp base-dir))
-	 (test-file-path (concat-paths base-dir "aproject" "test.py")))
+  (abl-git-test
     (let ((abl-values (abl-values-for-path test-file-path)))
       (should (car abl-values))
       (should (string-equal "none" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values)))
-    (cleanup base-dir))))
+      (should (string-equal project-name (nth 3 abl-values))))))
 
 
 (ert-deftest test-git-abl ()
-  (let* ((base-dir (setup-git-tests))
-	 (project-name (last-path-comp base-dir))
-	 (test-file-path (concat-paths base-dir "aproject" "test.py")))
+  (abl-git-test
     (commit-git base-dir)
     (let ((abl-values (abl-values-for-path test-file-path)))
       (should (car abl-values))
       (should (string-equal "master" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values)))
-    (cleanup base-dir))))
+      (should (string-equal project-name (nth 3 abl-values))))))
 
 
 (ert-deftest test-branched-git-abl ()
-  (let* ((base-dir (setup-git-tests))
-	 (project-name (last-path-comp base-dir))
-	 (test-file-path (concat-paths base-dir "aproject" "test.py")))
+  (abl-git-test
     (commit-git base-dir)
     (branch-git base-dir "gitbranch")
     (let ((abl-values (abl-values-for-path test-file-path)))
       (should (car abl-values))
       (should (string-equal "gitbranch" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))
-    (cleanup base-dir)))
+      (should (string-equal project-name (nth 3 abl-values))))))
+
+
 
