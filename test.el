@@ -5,7 +5,7 @@
   (with-temp-buffer (insert string)
 		    (write-region (point-min) (point-max) file-path)))
 
-(defvar project-dir "aproject")
+(defvar project-subdir "aproject")
 (defvar test-file-name "test.py")
 (defvar output-file-path "/tmp/tc.txt")
 (defvar output-content "ABL MODE WAS HERE")
@@ -31,9 +31,9 @@
   ;;             - test.py (contents: blah)
   ;;             - __init__.py (contents: #nothing)
 
-  (let* ((project-name "aproject")
+  (let* ((project-name project-subdir)
 	 (base-dir (or base (make-temp-file "abltest" 't)))
-	 (project-dir (concat-paths base-dir project-dir)))
+	 (project-dir (concat-paths base-dir project-subdir)))
     (if (not (file-exists-p base-dir)) (make-directory base-dir))
     (assert (index-of "Initialized empty Git repository"
 		      (shell-command-to-string
@@ -49,7 +49,7 @@
    (format
     "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
     base-path
-    project-dir
+    project-subdir
     test-file-name)))
 
 (defun branch-git (base-path branch-name)
