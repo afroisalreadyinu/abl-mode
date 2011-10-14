@@ -145,7 +145,7 @@
      (buffer-local-value 'project-name buffer)
      (buffer-local-value 'vem-name buffer))))
 
-(defmacro abl-git-test (&rest tests-etc)
+(defmacro abl-git-test (create-vem &rest tests-etc)
   `(let* ((base-dir (setup-git-tests))
 	  (project-name (last-path-comp base-dir))
 	  (test-file-path (concat-paths base-dir "aproject" "test.py")))
