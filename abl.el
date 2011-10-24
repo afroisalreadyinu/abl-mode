@@ -515,3 +515,4 @@ followed by a proper class name).")
 ;; Features:
 ;; - add import (looks at other files, maybe in the order of last
 ;;   visited, and finds suitable imports to insert
+;; - show the import line for an entity
