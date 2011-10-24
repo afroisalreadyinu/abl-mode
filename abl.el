@@ -269,6 +269,12 @@
 	       (setq vem-name new-vem-name)))))
 
 
+
+;; (defun run-shell-command (command buffer-name)
+;;   (switch-to-buffer-other-window buffer-name)
+;;   (goto-char (point-max))
+;;   (insert command)
+;;   (comint-send-input))
 (defun run-shell-command (command buffer-name)
   (process-send-string buffer-name
 		       (concat command "\n")))

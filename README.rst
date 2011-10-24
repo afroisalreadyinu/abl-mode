@@ -3,19 +3,20 @@ abl-mode
 ========
 
 The abl-mode is for python programmers who develop using virtual
-environments, version control branches and unit tests. To install
+environments, version control branches and unit tests.  To install
 abl-mode, put abl.el on your elisp path, and include the following in
-your emacs configuration file:
+your emacs configuration file::
 
-(require 'abl)
+   (require 'abl)
 
 If you want to activate abl-mode automatically, add the following to
-your configuration:
+your configuration::
 
-(add-hook 'find-file-hooks 'abl-mode-hook)
+   (add-hook 'find-file-hooks 'abl-mode-hook)
 
 You can replace find-file-hooks with python-mode-hook if you want to
 activate abl-mode only for python files.
+
 
 =======================================
 Commands and their default key bindings
@@ -78,9 +79,9 @@ Customization
 =============
 
 You can set any of the following options by including a line such as
-the following in your .emacs file:
+the following in your .emacs file::
 
-(setq option-name new-value)
+   (setq option-name new-value)
 
 String formatting is similar to the way it is done in Python; %s gets
 replaced by the relevant value when the option gets used.
