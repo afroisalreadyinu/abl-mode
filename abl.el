@@ -98,6 +98,9 @@
   git branch if you're on git.")
 (make-variable-buffer-local 'abl-branch)
 
+(defvar abl-shell-name "ABL-SHELL"
+(make-variable-buffer-local 'abl-shell-name)
+
 (defvar project-name "web"
   "The name of the project. ")
 (make-variable-buffer-local 'project-name)
@@ -272,31 +275,23 @@
 
 ;; (defun run-shell-command (command buffer-name)
 ;;   (switch-to-buffer-other-window buffer-name)
-;;   (goto-char (point-max))
-;;   (insert command)
-;;   (comint-send-input))
-(defun run-shell-command (command buffer-name)
-  (process-send-string buffer-name
-		       (concat command "\n")))
+;;
+;;
+;;   )
+(defun exec-command (command shell-name)
+  (create-or-switch-to-branch-shell)
+  (goto-char (point-max))
+  (insert command)
+  (comint-send-input))
 
-
-(defun run-shell-command-for-branch (command branch-name)
-  (save-excursion
-    (let ((shell-name (shell-name-for-branch project-name abl-branch)))
-      (if (not (member shell-name existing-shells))
-	  (create-or-switch-to-branch-shell))
-      (run-shell-command command shell-name))))
-
-
-(defun run-command-for-abl-branch (command)
-  (run-shell-command-for-branch command abl-branch))
-
+(defun exec-for-branch (command)
+      (exec-command command abl-shell-name))
 
 ;; <<------------  Running the server and tests  -------->>
 
 (defun run-current-branch ()
   (interactive)
-  (run-command-for-abl-branch start-server-command)
+  (exec-command start-server-command)
   (message (format "Started local server for branch %s" abl-branch)))
 
 
