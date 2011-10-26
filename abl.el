@@ -226,21 +226,24 @@
 (defun shell-name-for-branch (project-name branch-name)
   (concat branch-shell-prefix project-name "_" branch-name))
 
+(defun exec-command (command &optional check-shell)
+  (if check-shell (create-or-switch-to-branch-shell))
+  (goto-char (point-max))
+  (insert command)
+  (comint-send-input))
 
 (defun create-or-switch-to-branch-shell ()
-  (let ((shell-name (shell-name-for-branch project-name abl-branch)))
-    (unless (member shell-name existing-shells)
-      (save-excursion (shell shell-name))
-      (run-shell-command (concat "cd " abl-branch-base)
-			 shell-name)
-      (vem-exists-create vem-name shell-name)
-      (run-shell-command (format vem-activate-command vem-name)
-			 shell-name)
-      (setf existing-shells (append existing-shells '(shell-name))))
-    (if (> (length (get-buffer-window-list shell-name nil t)) 1)
-	(delete-window))
-    shell-name))
-
+  (unless (member abl-shell-name existing-shells)
+    (save-excursion
+      (shell abl-shell-name)
+      (sleep-for 1))
+    (exec-command (concat "cd " abl-branch-base))
+    (vem-exists-create vem-name abl-shell-name)
+    (exec-command (format vem-activate-command vem-name))
+    (setf existing-shells (append existing-shells '(abl-shell-name))))
+  (if (> (length (get-buffer-window-list abl-shell-name nil t)) 1)
+      (delete-window))
+  abl-shell-name)
 
 (defun vem-name-or-create (name)
   (let ((vem-path (expand-file-name name vems-base-dir)))
@@ -262,38 +265,20 @@
 	 (new-vem-name (car new-or-name)))
     (if create-vem
 	(progn
-	  (run-shell-command (format vem-create-command new-vem-name) shell-name)
-	  (run-shell-command (format vem-activate-command new-vem-name) shell-name)
-	  (run-shell-command (format "%s setup.py develop" abl-python-executable)
-			     shell-name))
-      (run-shell-command (format vem-activate-command new-vem-name) shell-name))
+	  (exec-command (format vem-create-command new-vem-name))
+	  (exec-command (format vem-activate-command new-vem-name))
+	  (exec-command (format "%s setup.py develop" abl-python-executable)))
+      (exec-command (format vem-activate-command new-vem-name)))
     (if (not (string-equal new-vem-name name))
 	(progn (setq replacement-vems (cons '(name . new-vem-name) replacement-vems))
 	       (setq vem-name new-vem-name)))))
-
-
-
-;; (defun run-shell-command (command buffer-name)
-;;   (switch-to-buffer-other-window buffer-name)
-;;
-;;
-;;   )
-(defun exec-command (command shell-name)
-  (create-or-switch-to-branch-shell)
-  (goto-char (point-max))
-  (insert command)
-  (comint-send-input))
-
-(defun exec-for-branch (command)
-      (exec-command command abl-shell-name))
 
 ;; <<------------  Running the server and tests  -------->>
 
 (defun run-current-branch ()
   (interactive)
-  (exec-command start-server-command)
+  (exec-command start-server-command t)
   (message (format "Started local server for branch %s" abl-branch)))
-
 
 (defun determine-test-function-name ()
   (save-excursion
@@ -354,7 +339,7 @@ followed by a proper class name).")
 	 (shell-command (format complete-testrun-command test-command-torun test-command-torun))
 	 (real-branch-name (or branch-name abl-branch)))
     (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
-    (run-shell-command-for-branch shell-command real-branch-name)
+    (exec-command shell-command t)
     (setq last-test-run (cons test-path abl-branch))))
 
 
