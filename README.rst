@@ -2,10 +2,29 @@
 abl-mode
 ========
 
-The abl-mode is for python programmers who develop using virtual
-environments, version control branches and unit tests.  To install
-abl-mode, put abl.el on your elisp path, and include the following in
-your emacs configuration file::
+The abl-mode is a minor mode for python programmers who develop using
+virtual environments, version control branches and unit tests.
+
+What does it do?
+----------------
+
+Abl-mode is ideal for developers who switch development branches
+frequently, and create python virtual environments for these
+individual branches. When you run a test with ``C-c t`` or start a
+server with ``C-c r``, abl-mode checks the availability of a virtual
+environment for the branch you're on. The name of the virtual
+environment is determined according to the name of the project and the
+VCS branch. If there is no such virtual environment, the user is
+prompted either for the name of a replacement virtual environment, or
+``y`` for creating a new virtual environment. Once you've run a test,
+and made some changes depending on the results, you can rerun the same
+test with ``C-c u``.
+
+Installing
+----------
+
+To install abl-mode, put abl.el on your elisp path, and include the
+following in your emacs configuration file::
 
    (require 'abl)
 
@@ -16,7 +35,6 @@ your configuration::
 
 You can replace find-file-hooks with python-mode-hook if you want to
 activate abl-mode only for python files.
-
 
 =======================================
 Commands and their default key bindings
