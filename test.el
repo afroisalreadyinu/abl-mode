@@ -45,12 +45,12 @@
     base-dir))
 
 (defun commit-git (base-path)
-  (shell-command-to-string
-   (format
-    "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
-    base-path
-    project-subdir
-    test-file-name)))
+    (shell-command-to-string
+     (format
+      "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
+      base-path
+      project-subdir
+      test-file-name)))
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
@@ -143,9 +143,12 @@
      (buffer-local-value 'abl-branch buffer)
      (buffer-local-value 'abl-branch-base buffer)
      (buffer-local-value 'project-name buffer)
-     (buffer-local-value 'vem-name buffer))))
+     (buffer-local-value 'vem-name buffer)
+     (buffer-local-value 'abl-shell-name buffer))))
 
 (defmacro abl-git-test (create-vem &rest tests-etc)
+  "Macro for tests. The first argument determines whether a dummy
+vem is created."
   `(let* ((base-dir (setup-git-tests))
 	  (project-name (last-path-comp base-dir))
 	  (test-file-path (concat-paths base-dir "aproject" "test.py")))
@@ -155,7 +158,7 @@
 	 (cleanup base-dir))))
 
 (ert-deftest test-empty-git-abl ()
-  (abl-git-test
+  (abl-git-test nil
     (let ((abl-values (abl-values-for-path test-file-path)))
       (should (car abl-values))
       (should (string-equal "none" (nth 1 abl-values)))
@@ -164,7 +167,7 @@
 
 
 (ert-deftest test-git-abl ()
-  (abl-git-test
+  (abl-git-test nil
     (commit-git base-dir)
     (let ((abl-values (abl-values-for-path test-file-path)))
       (should (car abl-values))
@@ -174,7 +177,7 @@
 
 
 (ert-deftest test-branched-git-abl ()
-  (abl-git-test
+  (abl-git-test nil
     (commit-git base-dir)
     (branch-git base-dir "gitbranch")
     (let ((abl-values (abl-values-for-path test-file-path)))
@@ -187,7 +190,7 @@
 (ert-deftest test-git-abl-functionality ()
   ;;this test checks whether the two main functionalities of running
   ;;tests and running a server work
-  (abl-git-test
+  (abl-git-test t
     (commit-git base-dir)
     (find-file test-file-path)
     (goto-char (point-max))

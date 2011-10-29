@@ -98,7 +98,7 @@
   git branch if you're on git.")
 (make-variable-buffer-local 'abl-branch)
 
-(defvar abl-shell-name "ABL-SHELL"
+(defvar abl-shell-name "ABL-SHELL")
 (make-variable-buffer-local 'abl-shell-name)
 
 (defvar project-name "web"
