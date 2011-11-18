@@ -1,3 +1,7 @@
+;; to run the tests:
+;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
+
+
 (require 'abl)
 (require 'ert)
 
@@ -173,7 +177,11 @@ vem is created."
       (should (car abl-values))
       (should (string-equal "master" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))))
+      (should (string-equal project-name (nth 3 abl-values)))
+      (should (string-equal (concat project-name "_" "master")
+			    (nth 4 abl-values)))
+      (should (string-equal (concat "ABL-SHELL:" project-name "_" "master")
+			    (nth 5 abl-values))))))
 
 
 (ert-deftest test-branched-git-abl ()
@@ -184,7 +192,11 @@ vem is created."
       (should (car abl-values))
       (should (string-equal "gitbranch" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))))
+      (should (string-equal project-name (nth 3 abl-values)))
+      (should (string-equal (concat project-name "_" "gitbranch")
+			    (nth 4 abl-values)))
+      (should (string-equal (concat "ABL-SHELL:" project-name "_" "gitbranch")
+			    (nth 5 abl-values))))))
 
 
 (ert-deftest test-git-abl-functionality ()
@@ -196,3 +208,6 @@ vem is created."
     (goto-char (point-max))
     (let ((test-path (get-test-entity)))
       (should (string-equal test-path "aproject.test:AblTest.test_abl_mode")))))
+
+(add-hook 'find-file-hooks 'abl-mode-hook)
+(ert t)

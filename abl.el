@@ -23,6 +23,9 @@
 	  (setq abl-branch (branch-name abl-branch-base))
 	  (setq project-name (get-project-name abl-branch-base))
 	  (setq vem-name (get-vem-name))
+	  (setq abl-shell-name (shell-name-for-branch
+				project-name
+				abl-branch))
 	  ))))
 
 (defun abl-mode-hook ()
