@@ -74,11 +74,6 @@
   "command executed for starting the local server of a web
   application.")
 
-(defcustom complete-testrun-command "echo '%s' && %s"
-  "This is the actual command which is executed for tests; the
-  test command is formatted into it twice in order to get display
-  of what actually happens in the shell buffer")
-
 (defcustom abl-python-executable "python"
   "The executable used to install a package with.")
 
@@ -229,24 +224,25 @@
 (defun shell-name-for-branch (project-name branch-name)
   (concat branch-shell-prefix project-name "_" branch-name))
 
-(defun exec-command (command &optional check-shell)
-  (if check-shell (create-or-switch-to-branch-shell))
+(defun exec-command (command)
+  "This function should be used from inside a non-shell buffer"
+  (create-or-switch-to-branch-shell abl-shell-name vem-name)
+  (run-command command))
+
+(defun run-command (command)
+  "This function should be used when inside a shell"
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
-(defun create-or-switch-to-branch-shell ()
-  (unless (member abl-shell-name existing-shells)
-    (save-excursion
-      (shell abl-shell-name)
-      (sleep-for 1))
-    (exec-command (concat "cd " abl-branch-base))
-    (vem-exists-create vem-name abl-shell-name)
-    (exec-command (format vem-activate-command vem-name))
-    (setf existing-shells (append existing-shells '(abl-shell-name))))
-  (if (> (length (get-buffer-window-list abl-shell-name nil t)) 1)
+(defun create-or-switch-to-branch-shell (shell-name virtualenv-name)
+  (shell shell-name)
+  (unless (member shell-name existing-shells) (sleep-for 1))
+  (vem-exists-create virtualenv-name shell-name)
+  (setf existing-shells (append existing-shells '(shell-name)))
+  (if (> (length (get-buffer-window-list shell-name nil t)) 1)
       (delete-window))
-  abl-shell-name)
+  shell-name)
 
 (defun vem-name-or-create (name)
   (let ((vem-path (expand-file-name name vems-base-dir)))
@@ -268,10 +264,10 @@
 	 (new-vem-name (car new-or-name)))
     (if create-vem
 	(progn
-	  (exec-command (format vem-create-command new-vem-name))
-	  (exec-command (format vem-activate-command new-vem-name))
-	  (exec-command (format "%s setup.py develop" abl-python-executable)))
-      (exec-command (format vem-activate-command new-vem-name)))
+	  (run-command (format vem-create-command new-vem-name))
+	  (run-command (format vem-activate-command new-vem-name))
+	  (run-command (format "%s setup.py develop" abl-python-executable)))
+      (run-command (format vem-activate-command new-vem-name)))
     (if (not (string-equal new-vem-name name))
 	(progn (setq replacement-vems (cons '(name . new-vem-name) replacement-vems))
 	       (setq vem-name new-vem-name)))))
@@ -280,7 +276,7 @@
 
 (defun run-current-branch ()
   (interactive)
-  (exec-command start-server-command t)
+  (exec-command start-server-command)
   (message (format "Started local server for branch %s" abl-branch)))
 
 (defun determine-test-function-name ()
@@ -338,11 +334,10 @@ followed by a proper class name).")
 
 
 (defun run-test (test-path &optional branch-name)
-  (let* ((test-command-torun (format test-command test-path))
-	 (shell-command (format complete-testrun-command test-command-torun test-command-torun))
+  (let* ((shell-command (format test-command test-path))
 	 (real-branch-name (or branch-name abl-branch)))
     (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
-    (exec-command shell-command t)
+    (exec-command shell-command)
     (setq last-test-run (cons test-path abl-branch))))
 
 
