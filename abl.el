@@ -25,8 +25,7 @@
 	  (setq vem-name (get-vem-name))
 	  (setq abl-shell-name (shell-name-for-branch
 				project-name
-				abl-branch))
-	  ))))
+				abl-branch))))))
 
 (defun abl-mode-hook ()
   (abl-mode))
