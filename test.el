@@ -233,6 +233,7 @@ vem is created."
 	(find-file test-proof-file-path)
 	(should (search-forward test-path)))
 
+      (find-file test-file-path)
       (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
       (run-current-branch)
       (sleep-for 1)
