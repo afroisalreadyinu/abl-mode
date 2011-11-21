@@ -225,7 +225,7 @@
 
 (defun exec-command (command)
   "This function should be used from inside a non-shell buffer"
-  (create-or-switch-to-branch-shell abl-shell-name vem-name)
+  (create-or-switch-to-branch-shell abl-shell-name vem-name abl-branch-base)
   (run-command command))
 
 (defun run-command (command)
@@ -234,8 +234,9 @@
   (insert command)
   (comint-send-input))
 
-(defun create-or-switch-to-branch-shell (shell-name virtualenv-name)
+(defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
   (shell shell-name)
+  (run-command (concat "cd " base-dir))
   (unless (member shell-name existing-shells) (sleep-for 1))
   (vem-exists-create virtualenv-name shell-name)
   (setf existing-shells (append existing-shells '(shell-name)))

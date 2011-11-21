@@ -239,8 +239,8 @@ vem is created."
       (should (file-exists-p run-proof-file-path))
       (save-excursion
 	(find-file run-proof-file-path)
-	(should (search-forward (nth 2 abl-values))))
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
       (cleanup vems-base-dir))))
 
-;(add-hook 'find-file-hooks 'abl-mode-hook)
-;(ert t)
+(add-hook 'find-file-hooks 'abl-mode-hook)
+(ert t)
