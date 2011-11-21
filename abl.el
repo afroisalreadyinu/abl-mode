@@ -52,7 +52,7 @@
           (cons (cons 'abl-mode abl-mode-keymap)
                 minor-mode-map-alist)))
 
-;; <<------------  Variables  -------------->>
+;; <<------------  Customization options  -------------->>
 
 (defcustom vem-activate-command "vem activate %s"
   "The command for activating a virtual environment")

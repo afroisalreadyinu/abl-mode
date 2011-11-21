@@ -243,5 +243,18 @@ vem is created."
 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
       (cleanup vems-base-dir))))
 
+(ert-deftest test-replacement-vem ()
+  (abl-git-test
+    (commit-git base-dir)
+    (find-file test-file-path)
+    (goto-char (point-max))
+    (let* ((abl-values (abl-values-for-path test-file-path))
+	  (vemname (nth 4 abl-values)))
+      (shell-command-to-string (format "virtualenv %s"
+				       (concat-paths vems-base-dir vemname)))
+      (should (= 0 (length replacement-vems)))
+      (cleanup vems-base-dir))))
+
+
 (add-hook 'find-file-hooks 'abl-mode-hook)
 (ert t)
