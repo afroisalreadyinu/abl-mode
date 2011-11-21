@@ -157,7 +157,10 @@
 vem is created."
   `(let* ((base-dir (setup-git-tests))
 	  (project-name (last-path-comp base-dir))
-	  (test-file-path (concat-paths base-dir "aproject" "test.py")))
+	  (test-file-path (concat-paths base-dir "aproject" "test.py"))
+	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
+	  (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
+	  (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir)))
      (unwind-protect
 	 (progn
 	   ,@tests-etc)
@@ -212,9 +215,6 @@ vem is created."
     (goto-char (point-max))
     (let* ((abl-values (abl-values-for-path test-file-path))
 	   (test-path (get-test-entity))
-	   (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
-	   (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
-	   (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir))
 	   (vemname (nth 4 abl-values)))
       (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
       (setq test-command (concat "echo '%s' > " test-proof-file-path))
@@ -249,11 +249,23 @@ vem is created."
     (find-file test-file-path)
     (goto-char (point-max))
     (let* ((abl-values (abl-values-for-path test-file-path))
-	  (vemname (nth 4 abl-values)))
+	   (master-vemname (nth 4 abl-values))
+	   (new-branch "gitbranch")
+	   (branch-vemname (concat project-name "_" new-branch)))
       (shell-command-to-string (format "virtualenv %s"
-				       (concat-paths vems-base-dir vemname)))
+				       (concat-paths vems-base-dir master-vemname)))
       (should (= 0 (length replacement-vems)))
-      (cleanup vems-base-dir))))
+      (cleanup vems-base-dir)
+      (branch-git base-dir new-branch)
+      (setq replacement_vems (list (cons master-vemname branch-vemname) ))
+      (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+
+      (find-file test-file-path)
+      (run-test-at-point)
+      (sleep-for 1)
+      (should (file-exists-p vem-proof-file-path))
+
+      )))
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)

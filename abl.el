@@ -245,17 +245,21 @@
   shell-name)
 
 (defun vem-name-or-create (name)
-  (let ((vem-path (expand-file-name name vems-base-dir)))
-    (if (file-exists-p vem-path)
-	(cons name nil)
-      (let*
-	  ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
-				   name))
-	   (vem-or-y (read-from-minibuffer command-string))
-	   (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	(if create-new
-	    (cons name create-new)
-	  (vem-name-or-create vem-or-y))))))
+  (message (concat "VEM NAME: "))
+  (let ((replacement-vem (cdr (assoc name replacement-vems))))
+    (if replacement-vem
+	(cons replacement-vem nil)
+    (let ((vem-path (expand-file-name name vems-base-dir)))
+      (if (file-exists-p vem-path)
+	  (cons name nil)
+	(let*
+	    ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
+				     name))
+	     (vem-or-y (read-from-minibuffer command-string))
+	     (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	  (if create-new
+	      (cons name create-new)
+	    (vem-name-or-create vem-or-y))))))))
 
 
 (defun vem-exists-create (name shell-name)
@@ -269,7 +273,7 @@
 	  (run-command (format "%s setup.py develop" abl-python-executable)))
       (run-command (format vem-activate-command new-vem-name)))
     (if (not (string-equal new-vem-name name))
-	(progn (setq replacement-vems (cons '(name . new-vem-name) replacement-vems))
+	(progn (setq replacement-vems (cons (cons name new-vem-name) replacement-vems))
 	       (setq vem-name new-vem-name)))))
 
 ;; <<------------  Running the server and tests  -------->>
