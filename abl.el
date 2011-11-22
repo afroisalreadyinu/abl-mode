@@ -236,11 +236,11 @@
 
 (defun run-command (command)
   "This function should be used when inside a shell"
-  (while (shell-busy) (sleep-for 1))
+  (while (shell-busy) (sleep-for 0.04))
   (goto-char (point-max))
   (insert command)
   (comint-send-input)
-  (sleep-for 0.5))
+  (sleep-for 0.05))
 
 (defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
   (shell shell-name)
