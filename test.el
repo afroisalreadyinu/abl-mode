@@ -58,9 +58,10 @@
       test-file-name)))
 
 (defun branch-git (base-path branch-name)
-  (shell-command-to-string (format
-			    "cd %s && git branch %s && git checkout %s"
-			    base-path branch-name branch-name)))
+  (message (concat "BASE: " base-path))
+  (message (concat "OUTCOME: " (shell-command-to-string (format
+							 "cd %s && git branch %s && git checkout %s"
+							 base-path branch-name branch-name)))))
 
 (defun cleanup (path)
   ;; rm -rf's a folder which begins with /tmp. you shouldn't put
@@ -246,27 +247,34 @@ vem is created."
 (ert-deftest test-replacement-vem ()
   (abl-git-test
     (commit-git base-dir)
-    (find-file test-file-path)
-    (goto-char (point-max))
     (let* ((abl-values (abl-values-for-path test-file-path))
 	   (master-vemname (nth 4 abl-values))
 	   (new-branch "gitbranch")
-	   (branch-vemname (concat project-name "_" new-branch)))
+	   (branch-vemname (concat project-name "_" new-branch))
+	   (test-buff (find-file test-file-path)))
+      (goto-char (point-max))
+      (setq vems-base-dir (make-temp-file "vems" 't))
       (shell-command-to-string (format "virtualenv %s"
 				       (concat-paths vems-base-dir master-vemname)))
       (should (= 0 (length replacement-vems)))
-      (cleanup vems-base-dir)
+
       (branch-git base-dir new-branch)
-      (setq replacement_vems (list (cons master-vemname branch-vemname) ))
+      (setq replacement-vems (list (cons branch-vemname master-vemname)))
       (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
 
-      (find-file test-file-path)
+      (revert-buffer test-buff t nil)
+      (goto-char (point-max))
       (run-test-at-point)
       (sleep-for 1)
       (should (file-exists-p vem-proof-file-path))
+      (save-excursion
+	(find-file vem-proof-file-path)
+	(should (string= (buffer-substring (point-min) (- (point-max) 1))
+			 master-vemname)))
 
+      (cleanup vems-base-dir)
       )))
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert t)
+(ert 'test-replacement-vem)

@@ -245,21 +245,20 @@
   shell-name)
 
 (defun vem-name-or-create (name)
-  (message (concat "VEM NAME: "))
   (let ((replacement-vem (cdr (assoc name replacement-vems))))
     (if replacement-vem
 	(cons replacement-vem nil)
-    (let ((vem-path (expand-file-name name vems-base-dir)))
-      (if (file-exists-p vem-path)
-	  (cons name nil)
-	(let*
-	    ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
-				     name))
-	     (vem-or-y (read-from-minibuffer command-string))
-	     (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	  (if create-new
-	      (cons name create-new)
-	    (vem-name-or-create vem-or-y))))))))
+      (let ((vem-path (expand-file-name name vems-base-dir)))
+	(if (file-exists-p vem-path)
+	    (cons name nil)
+	  (let*
+	      ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
+				       name))
+	       (vem-or-y (read-from-minibuffer command-string))
+	       (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	    (if create-new
+		(cons name create-new)
+	      (vem-name-or-create vem-or-y))))))))
 
 
 (defun vem-exists-create (name shell-name)
