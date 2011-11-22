@@ -223,11 +223,18 @@
 (defun shell-name-for-branch (project-name branch-name)
   (concat branch-shell-prefix project-name "_" branch-name))
 
-(defun shell-busy ()
-  (let* ((shell-process-id (process-id (get-buffer-process (current-buffer))))
+(defun shell-busy (&optional shell-buffer)
+  (let* ((real-buffer (or shell-buffer (current-buffer)))
+	 (shell-process-id (process-id (get-buffer-process real-buffer)))
 	 (command (format "ps --ppid %d  h | wc -l" shell-process-id))
 	 (output (shell-command-to-string command)))
     (/= (string-to-number output) 0)))
+
+(defun abl-shell-busy ()
+  (let ((abl-shell-buffer (get-buffer abl-shell-name)))
+    (if (not abl-shell-buffer)
+	nil
+      (shell-busy abl-shell-buffer))))
 
 (defun exec-command (command)
   "This function should be used from inside a non-shell buffer"
@@ -287,8 +294,11 @@
 
 (defun run-current-branch ()
   (interactive)
-  (exec-command start-server-command)
-  (message (format "Started local server for branch %s" abl-branch)))
+  (if (abl-shell-busy)
+      (message "The shell is busy; please end the process before running a test")
+    (progn
+      (exec-command start-server-command)
+      (message (format "Started local server for branch %s" abl-branch)))))
 
 (defun determine-test-function-name ()
   (save-excursion
@@ -345,11 +355,13 @@ followed by a proper class name).")
 
 
 (defun run-test (test-path &optional branch-name)
-  (let* ((shell-command (format test-command test-path))
-	 (real-branch-name (or branch-name abl-branch)))
-    (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
-    (exec-command shell-command)
-    (setq last-test-run (cons test-path abl-branch))))
+  (if (abl-shell-busy)
+      (message "The shell is busy; please end the process before running a test")
+    (let* ((shell-command (format test-command test-path))
+	   (real-branch-name (or branch-name abl-branch)))
+      (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
+      (exec-command shell-command)
+      (setq last-test-run (cons test-path abl-branch)))))
 
 
 ;This returns the python destination on point, depending on
