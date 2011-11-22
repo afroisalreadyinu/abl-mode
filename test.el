@@ -1,3 +1,6 @@
+;; to run the tests:
+;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
+
 (require 'abl)
 (require 'ert)
 
@@ -26,31 +29,33 @@
   ;;        |
   ;;        - .git
   ;;        - setup.py (contents: blah)
+  ;;        - _proof (dir)
   ;;        - aproject
   ;;             |
-  ;;             - test.py (contents: blah)
+  ;;             - test.py (contents: test-file-content)
   ;;             - __init__.py (contents: #nothing)
 
-  (let* ((project-name project-subdir)
-	 (base-dir (or base (make-temp-file "abltest" 't)))
-	 (project-dir (concat-paths base-dir project-subdir)))
+  (let* ((base-dir (or base (make-temp-file "abltest" 't)))
+	 (project-dir (concat-paths base-dir project-subdir))
+	 (proof-dir (concat-paths base-dir "_proof")))
     (if (not (file-exists-p base-dir)) (make-directory base-dir))
     (assert (index-of "Initialized empty Git repository"
 		      (shell-command-to-string
 		       (concat "git init " base-dir))))
     (make-directory project-dir)
+    (make-directory proof-dir)
     (write-to-file (concat-paths base-dir "setup.py") "blah")
     (write-to-file (concat-paths project-dir test-file-name) test-file-content)
     (write-to-file (concat-paths project-dir "__init__.py") "#nothing")
     base-dir))
 
 (defun commit-git (base-path)
-  (shell-command-to-string
-   (format
-    "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
-    base-path
-    project-subdir
-    test-file-name)))
+    (shell-command-to-string
+     (format
+      "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
+      base-path
+      project-subdir
+      test-file-name)))
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
@@ -143,16 +148,24 @@
      (buffer-local-value 'abl-branch buffer)
      (buffer-local-value 'abl-branch-base buffer)
      (buffer-local-value 'project-name buffer)
-     (buffer-local-value 'vem-name buffer))))
+     (buffer-local-value 'vem-name buffer)
+     (buffer-local-value 'abl-shell-name buffer))))
 
-(defmacro abl-git-test (create-vem &rest tests-etc)
+
+(defmacro abl-git-test (&rest tests-etc)
+  "Macro for tests. The first argument determines whether a dummy
+vem is created."
   `(let* ((base-dir (setup-git-tests))
 	  (project-name (last-path-comp base-dir))
-	  (test-file-path (concat-paths base-dir "aproject" "test.py")))
+	  (test-file-path (concat-paths base-dir "aproject" "test.py"))
+	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
+	  (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
+	  (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir)))
      (unwind-protect
 	 (progn
 	   ,@tests-etc)
 	 (cleanup base-dir))))
+
 
 (ert-deftest test-empty-git-abl ()
   (abl-git-test
@@ -160,7 +173,8 @@
       (should (car abl-values))
       (should (string-equal "none" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))))
+      (should (string-equal project-name (nth 3 abl-values)))
+      (should (string-equal (concat project-name "_" "none") (nth 4 abl-values))))))
 
 
 (ert-deftest test-git-abl ()
@@ -170,7 +184,11 @@
       (should (car abl-values))
       (should (string-equal "master" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))))
+      (should (string-equal project-name (nth 3 abl-values)))
+      (should (string-equal (concat project-name "_" "master")
+			    (nth 4 abl-values)))
+      (should (string-equal (concat "ABL-SHELL:" project-name "_" "master")
+			    (nth 5 abl-values))))))
 
 
 (ert-deftest test-branched-git-abl ()
@@ -181,7 +199,11 @@
       (should (car abl-values))
       (should (string-equal "gitbranch" (nth 1 abl-values)))
       (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values))))))
+      (should (string-equal project-name (nth 3 abl-values)))
+      (should (string-equal (concat project-name "_" "gitbranch")
+			    (nth 4 abl-values)))
+      (should (string-equal (concat "ABL-SHELL:" project-name "_" "gitbranch")
+			    (nth 5 abl-values))))))
 
 
 (ert-deftest test-git-abl-functionality ()
@@ -191,5 +213,71 @@
     (commit-git base-dir)
     (find-file test-file-path)
     (goto-char (point-max))
-    (let ((test-path (get-test-entity)))
-      (should (string-equal test-path "aproject.test:AblTest.test_abl_mode")))))
+    (let* ((abl-values (abl-values-for-path test-file-path))
+	   (test-path (get-test-entity))
+	   (vemname (nth 4 abl-values)))
+      (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+      (setq test-command (concat "echo '%s' > " test-proof-file-path))
+      (setq vems-base-dir (make-temp-file "vems" 't))
+      (shell-command-to-string (format "virtualenv %s"
+				       (concat-paths vems-base-dir vemname)))
+      (should (string-equal test-path "aproject.test:AblTest.test_abl_mode"))
+      (run-test-at-point)
+      (sleep-for 1)
+      (should (file-exists-p vem-proof-file-path))
+
+      (save-excursion
+	(find-file vem-proof-file-path)
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) vemname)))
+
+      (should (file-exists-p test-proof-file-path))
+
+      (save-excursion
+	(find-file test-proof-file-path)
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) test-path)))
+
+      (find-file test-file-path)
+      (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
+      (run-current-branch)
+      (sleep-for 1)
+      (should (file-exists-p run-proof-file-path))
+
+      (save-excursion
+	(find-file run-proof-file-path)
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
+      (cleanup vems-base-dir))))
+
+(ert-deftest test-replacement-vem ()
+  (abl-git-test
+    (commit-git base-dir)
+    (let* ((abl-values (abl-values-for-path test-file-path))
+	   (master-vemname (nth 4 abl-values))
+	   (new-branch "gitbranch")
+	   (branch-vemname (concat project-name "_" new-branch))
+	   (test-buff (find-file test-file-path)))
+      (goto-char (point-max))
+      (setq vems-base-dir (make-temp-file "vems" 't))
+      (shell-command-to-string (format "virtualenv %s"
+				       (concat-paths vems-base-dir master-vemname)))
+      (should (= 0 (length replacement-vems)))
+
+      (branch-git base-dir new-branch)
+      (setq replacement-vems (list (cons branch-vemname master-vemname)))
+      (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+
+      (revert-buffer test-buff t nil)
+      (goto-char (point-max))
+      (run-test-at-point)
+      (sleep-for 1)
+      (should (file-exists-p vem-proof-file-path))
+      (save-excursion
+	(find-file vem-proof-file-path)
+	(should (string= (buffer-substring (point-min) (- (point-max) 1))
+			 master-vemname)))
+
+      (cleanup vems-base-dir)
+      )))
+
+
+(add-hook 'find-file-hooks 'abl-mode-hook)
+(ert t)

@@ -23,7 +23,9 @@
 	  (setq abl-branch (branch-name abl-branch-base))
 	  (setq project-name (get-project-name abl-branch-base))
 	  (setq vem-name (get-vem-name))
-	  ))))
+	  (setq abl-shell-name (shell-name-for-branch
+				project-name
+				abl-branch))))))
 
 (defun abl-mode-hook ()
   (abl-mode))
@@ -50,7 +52,7 @@
           (cons (cons 'abl-mode abl-mode-keymap)
                 minor-mode-map-alist)))
 
-;; <<------------  Variables  -------------->>
+;; <<------------  Customization options  -------------->>
 
 (defcustom vem-activate-command "vem activate %s"
   "The command for activating a virtual environment")
@@ -70,11 +72,6 @@
 (defcustom start-server-command "scripts/run.sh"
   "command executed for starting the local server of a web
   application.")
-
-(defcustom complete-testrun-command "echo '%s' && %s"
-  "This is the actual command which is executed for tests; the
-  test command is formatted into it twice in order to get display
-  of what actually happens in the shell buffer")
 
 (defcustom abl-python-executable "python"
   "The executable used to install a package with.")
@@ -97,6 +94,9 @@
   set to the name of the directory in which you are for svn, the
   git branch if you're on git.")
 (make-variable-buffer-local 'abl-branch)
+
+(defvar abl-shell-name "ABL-SHELL")
+(make-variable-buffer-local 'abl-shell-name)
 
 (defvar project-name "web"
   "The name of the project. ")
@@ -223,34 +223,57 @@
 (defun shell-name-for-branch (project-name branch-name)
   (concat branch-shell-prefix project-name "_" branch-name))
 
+(defun shell-busy (&optional shell-buffer)
+  (let* ((real-buffer (or shell-buffer (current-buffer)))
+	 (shell-process-id (process-id (get-buffer-process real-buffer)))
+	 (command (format "ps --ppid %d  h | wc -l" shell-process-id))
+	 (output (shell-command-to-string command)))
+    (/= (string-to-number output) 0)))
 
-(defun create-or-switch-to-branch-shell ()
-  (let ((shell-name (shell-name-for-branch project-name abl-branch)))
-    (unless (member shell-name existing-shells)
-      (save-excursion (shell shell-name))
-      (run-shell-command (concat "cd " abl-branch-base)
-			 shell-name)
-      (vem-exists-create vem-name shell-name)
-      (run-shell-command (format vem-activate-command vem-name)
-			 shell-name)
-      (setf existing-shells (append existing-shells '(shell-name))))
-    (if (> (length (get-buffer-window-list shell-name nil t)) 1)
-	(delete-window))
-    shell-name))
+(defun abl-shell-busy ()
+  (let ((abl-shell-buffer (get-buffer abl-shell-name)))
+    (if (not abl-shell-buffer)
+	nil
+      (shell-busy abl-shell-buffer))))
 
+(defun exec-command (command)
+  "This function should be used from inside a non-shell buffer"
+  (create-or-switch-to-branch-shell abl-shell-name vem-name abl-branch-base)
+  (run-command command))
+
+(defun run-command (command)
+  "This function should be used when inside a shell"
+  (while (shell-busy) (sleep-for 0.04))
+  (goto-char (point-max))
+  (insert command)
+  (comint-send-input)
+  (sleep-for 0.05))
+
+(defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
+  (shell shell-name)
+  (unless (member shell-name existing-shells) (sleep-for 2))
+  (run-command (concat "cd " base-dir))
+  (vem-exists-create virtualenv-name shell-name)
+  (setf existing-shells (append existing-shells '(shell-name)))
+  (if (> (length (get-buffer-window-list shell-name nil t)) 1)
+      (delete-window))
+  shell-name)
 
 (defun vem-name-or-create (name)
-  (let ((vem-path (expand-file-name name vems-base-dir)))
-    (if (file-exists-p vem-path)
-	(cons name nil)
-      (let*
-	  ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
-				   name))
-	   (vem-or-y (read-from-minibuffer command-string))
-	   (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	(if create-new
-	    (cons name create-new)
-	  (vem-name-or-create vem-or-y))))))
+  (let ((replacement-vem (cdr (assoc name replacement-vems))))
+    (if replacement-vem
+	(cons replacement-vem nil)
+      (let ((vem-path (expand-file-name name vems-base-dir)))
+	(if (file-exists-p vem-path)
+	    (cons name nil)
+	  (let*
+	      ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
+				       name))
+	       (vem-or-y (read-from-minibuffer command-string))
+	       (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	    (if create-new
+		(cons name create-new)
+	      (vem-name-or-create vem-or-y))))))))
 
 
 (defun vem-exists-create (name shell-name)
@@ -259,46 +282,23 @@
 	 (new-vem-name (car new-or-name)))
     (if create-vem
 	(progn
-	  (run-shell-command (format vem-create-command new-vem-name) shell-name)
-	  (run-shell-command (format vem-activate-command new-vem-name) shell-name)
-	  (run-shell-command (format "%s setup.py develop" abl-python-executable)
-			     shell-name))
-      (run-shell-command (format vem-activate-command new-vem-name) shell-name))
+	  (run-command (format vem-create-command new-vem-name))
+	  (run-command (format vem-activate-command new-vem-name))
+	  (run-command (format "%s setup.py develop" abl-python-executable)))
+      (run-command (format vem-activate-command new-vem-name)))
     (if (not (string-equal new-vem-name name))
-	(progn (setq replacement-vems (cons '(name . new-vem-name) replacement-vems))
+	(progn (setq replacement-vems (cons (cons name new-vem-name) replacement-vems))
 	       (setq vem-name new-vem-name)))))
-
-
-
-;; (defun run-shell-command (command buffer-name)
-;;   (switch-to-buffer-other-window buffer-name)
-;;   (goto-char (point-max))
-;;   (insert command)
-;;   (comint-send-input))
-(defun run-shell-command (command buffer-name)
-  (process-send-string buffer-name
-		       (concat command "\n")))
-
-
-(defun run-shell-command-for-branch (command branch-name)
-  (save-excursion
-    (let ((shell-name (shell-name-for-branch project-name abl-branch)))
-      (if (not (member shell-name existing-shells))
-	  (create-or-switch-to-branch-shell))
-      (run-shell-command command shell-name))))
-
-
-(defun run-command-for-abl-branch (command)
-  (run-shell-command-for-branch command abl-branch))
-
 
 ;; <<------------  Running the server and tests  -------->>
 
 (defun run-current-branch ()
   (interactive)
-  (run-command-for-abl-branch start-server-command)
-  (message (format "Started local server for branch %s" abl-branch)))
-
+  (if (abl-shell-busy)
+      (message "The shell is busy; please end the process before running a test")
+    (progn
+      (exec-command start-server-command)
+      (message (format "Started local server for branch %s" abl-branch)))))
 
 (defun determine-test-function-name ()
   (save-excursion
@@ -355,12 +355,13 @@ followed by a proper class name).")
 
 
 (defun run-test (test-path &optional branch-name)
-  (let* ((test-command-torun (format test-command test-path))
-	 (shell-command (format complete-testrun-command test-command-torun test-command-torun))
-	 (real-branch-name (or branch-name abl-branch)))
-    (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
-    (run-shell-command-for-branch shell-command real-branch-name)
-    (setq last-test-run (cons test-path abl-branch))))
+  (if (abl-shell-busy)
+      (message "The shell is busy; please end the process before running a test")
+    (let* ((shell-command (format test-command test-path))
+	   (real-branch-name (or branch-name abl-branch)))
+      (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
+      (exec-command shell-command)
+      (setq last-test-run (cons test-path abl-branch)))))
 
 
 ;This returns the python destination on point, depending on
