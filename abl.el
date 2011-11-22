@@ -239,7 +239,8 @@
   (while (shell-busy) (sleep-for 1))
   (goto-char (point-max))
   (insert command)
-  (comint-send-input))
+  (comint-send-input)
+  (sleep-for 0.5))
 
 (defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
   (shell shell-name)
