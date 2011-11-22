@@ -223,6 +223,12 @@
 (defun shell-name-for-branch (project-name branch-name)
   (concat branch-shell-prefix project-name "_" branch-name))
 
+(defun shell-busy ()
+  (let* ((shell-process-id (process-id (get-buffer-process (current-buffer))))
+	 (command (format "ps --ppid %d  h | wc -l" shell-process-id))
+	 (output (shell-command-to-string command)))
+    (/= (string-to-number output) 0)))
+
 (defun exec-command (command)
   "This function should be used from inside a non-shell buffer"
   (create-or-switch-to-branch-shell abl-shell-name vem-name abl-branch-base)
@@ -230,14 +236,15 @@
 
 (defun run-command (command)
   "This function should be used when inside a shell"
+  (while (shell-busy) (sleep-for 1))
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
 (defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
   (shell shell-name)
+  (unless (member shell-name existing-shells) (sleep-for 2))
   (run-command (concat "cd " base-dir))
-  (unless (member shell-name existing-shells) (sleep-for 1))
   (vem-exists-create virtualenv-name shell-name)
   (setf existing-shells (append existing-shells '(shell-name)))
   (if (> (length (get-buffer-window-list shell-name nil t)) 1)
