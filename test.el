@@ -58,10 +58,9 @@
       test-file-name)))
 
 (defun branch-git (base-path branch-name)
-  (message (concat "BASE: " base-path))
-  (message (concat "OUTCOME: " (shell-command-to-string (format
-							 "cd %s && git branch %s && git checkout %s"
-							 base-path branch-name branch-name)))))
+  (shell-command-to-string (format
+			    "cd %s && git branch %s && git checkout %s"
+			    base-path branch-name branch-name)))
 
 (defun cleanup (path)
   ;; rm -rf's a folder which begins with /tmp. you shouldn't put
@@ -226,19 +225,23 @@ vem is created."
       (run-test-at-point)
       (sleep-for 1)
       (should (file-exists-p vem-proof-file-path))
+
       (save-excursion
 	(find-file vem-proof-file-path)
-	(should (search-forward vemname)))
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) vemname)))
+
       (should (file-exists-p test-proof-file-path))
+
       (save-excursion
 	(find-file test-proof-file-path)
-	(should (search-forward test-path)))
+	(should (string= (buffer-substring (point-min) (- (point-max) 1)) test-path)))
 
       (find-file test-file-path)
       (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
       (run-current-branch)
       (sleep-for 1)
       (should (file-exists-p run-proof-file-path))
+
       (save-excursion
 	(find-file run-proof-file-path)
 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
@@ -277,4 +280,4 @@ vem is created."
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert 'test-replacement-vem)
+(ert t)
