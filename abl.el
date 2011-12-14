@@ -238,26 +238,32 @@
 
 (defun exec-command (command)
   "This function should be used from inside a non-shell buffer"
-  (create-or-switch-to-branch-shell abl-shell-name vem-name abl-branch-base)
-  (run-command command))
+  (let* ((new-or-name (vem-name-or-create vem-name))
+	 (create-vem (cdr new-or-name))
+	 (new-vem-name (car new-or-name))
+	 (commands (if create-vem (list
+				   (concat "cd " abl-branch-base)
+				   (format vem-create-command new-vem-name)
+				   (format vem-activate-command new-vem-name)
+				   (format "%s setup.py develop" abl-python-executable)
+				   command)
+		     (list
+		      (concat "cd " abl-branch-base)
+		      (format vem-activate-command new-vem-name)
+		      command))))
+
+  (shell abl-shell-name)
+  (unless (member abl-shell-name existing-shells) (sleep-for 2))
+  (setf existing-shells (append existing-shells '(abl-shell-name)))
+  (run-command (join-string commands " && "))
+  (if (> (length (get-buffer-window-list abl-shell-name nil t)) 1)
+      (delete-window))))
 
 (defun run-command (command)
   "This function should be used when inside a shell"
-  (while (shell-busy) (sleep-for 0.04))
   (goto-char (point-max))
   (insert command)
-  (comint-send-input)
-  (sleep-for 0.05))
-
-(defun create-or-switch-to-branch-shell (shell-name virtualenv-name base-dir)
-  (shell shell-name)
-  (unless (member shell-name existing-shells) (sleep-for 2))
-  (run-command (concat "cd " base-dir))
-  (vem-exists-create virtualenv-name shell-name)
-  (setf existing-shells (append existing-shells '(shell-name)))
-  (if (> (length (get-buffer-window-list shell-name nil t)) 1)
-      (delete-window))
-  shell-name)
+  (comint-send-input))
 
 (defun vem-name-or-create (name)
   (let ((replacement-vem (cdr (assoc name replacement-vems))))
@@ -274,21 +280,6 @@
 	    (if create-new
 		(cons name create-new)
 	      (vem-name-or-create vem-or-y))))))))
-
-
-(defun vem-exists-create (name shell-name)
-  (let* ((new-or-name (vem-name-or-create name))
-	 (create-vem (cdr new-or-name))
-	 (new-vem-name (car new-or-name)))
-    (if create-vem
-	(progn
-	  (run-command (format vem-create-command new-vem-name))
-	  (run-command (format vem-activate-command new-vem-name))
-	  (run-command (format "%s setup.py develop" abl-python-executable)))
-      (run-command (format vem-activate-command new-vem-name)))
-    (if (not (string-equal new-vem-name name))
-	(progn (setq replacement-vems (cons (cons name new-vem-name) replacement-vems))
-	       (setq vem-name new-vem-name)))))
 
 ;; <<------------  Running the server and tests  -------->>
 
