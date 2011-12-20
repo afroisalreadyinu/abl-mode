@@ -1,8 +1,13 @@
+;;; abl-mode.el --- Python TDD minor mode
+
+;; Author: Ulas Tuerkmen
+;; URL: http://github.com/afroisalreadyinu/abl-mode
+;; Version: 0.9.0
 
 ;; The aim of this mode is to make editing Python code in a
 ;; version-controlled project easier, and make the repetitive tasks
-;; such as running tests and bits of code easier. It takes the
-;; organization of code in a certain way as granted.
+;; such as running tests and bits of code easier. Please see
+;; README.rst for details.
 
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 
@@ -514,3 +519,5 @@ followed by a proper class name).")
 ;; - add import (looks at other files, maybe in the order of last
 ;;   visited, and finds suitable imports to insert
 ;; - show the import line for an entity
+
+;;; abl-mode.el ends here
