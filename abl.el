@@ -508,16 +508,7 @@ followed by a proper class name).")
 ;; <<------------  TODOS -------------->>
 
 ;; - recreate virtual env
-;; - present status of test by reading stdout from proc or something
 ;; - take to location in stack trace
-;; - create tags file and find files in project.
-;; - create etags file progressively by first finding all the code files in the dir
-;; - don't do git branch for every new buffer; make an assoc-list of bases (works now, as an improvement)
-
-
-;; Features:
-;; - add import (looks at other files, maybe in the order of last
-;;   visited, and finds suitable imports to insert
-;; - show the import line for an entity
+;; - import something from one of the open files (or repeat existing import)
 
 ;;; abl-mode.el ends here
