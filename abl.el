@@ -1,13 +1,32 @@
 ;;; abl-mode.el --- Python TDD minor mode
 
-;; Author: Ulas Tuerkmen
+;;
+;; Author: Ulas Tuerkmen <ulas.tuerkmen at gmail dot com>
 ;; URL: http://github.com/afroisalreadyinu/abl-mode
 ;; Version: 0.9.0
+;;
+;; Copyright (C) 2011 Ulas Tuerkmen
+;;
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
 
 ;; The aim of this mode is to make editing Python code in a
-;; version-controlled project easier, and make the repetitive tasks
-;; such as running tests and bits of code easier. Please see
-;; README.rst for details.
+;; version-controlled project easier, and enable the execution of
+;; repetitive tasks --such as running tests or scripts-- in emacs
+;; shell buffers. Please see README.rst for details.
 
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 
