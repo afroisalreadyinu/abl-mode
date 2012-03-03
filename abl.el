@@ -529,5 +529,6 @@ followed by a proper class name).")
 ;; - recreate virtual env
 ;; - take to location in stack trace
 ;; - import something from one of the open files (or repeat existing import)
+;; - run file as script if it has a name == main at the end
 
 ;;; abl-mode.el ends here
