@@ -526,9 +526,11 @@ followed by a proper class name).")
 
 ;; <<------------  TODOS -------------->>
 
-;; - recreate virtual env
-;; - take to location in stack trace
+;; - C-c f looks for definition and not just import
 ;; - import something from one of the open files (or repeat existing import)
 ;; - run file as script if it has a name == main at the end
+;; - bash script for going to base of project
+;; - navigating to definitions of methods etc. should not be that difficult
+;; - per-project customization through a .abl file at the base of project
 
 ;;; abl-mode.el ends here
