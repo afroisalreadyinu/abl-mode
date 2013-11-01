@@ -521,7 +521,7 @@ followed by a proper class name).")
    (expand-file-name "python" (concat-paths vems-base-dir  vem-name "bin"))
    (concat "Python " vem-name)))
 
-(provide 'abl)
+(provide 'abl-mode)
 
 
 ;; <<------------  TODOS -------------->>
