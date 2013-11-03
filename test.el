@@ -239,13 +239,6 @@ vem is created."
 
       (find-file test-file-path)
       (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
-      (run-current-branch)
-      (sleep-for 1)
-      (should (file-exists-p run-proof-file-path))
-
-      (save-excursion
-	(find-file run-proof-file-path)
-	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
       (cleanup abl-mode-vems-base-dir))))
 
 (ert-deftest test-replacement-vem ()

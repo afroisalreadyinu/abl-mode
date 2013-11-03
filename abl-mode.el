@@ -61,7 +61,6 @@
 
 (defvar abl-mode-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c r") 'run-current-branch)
     (define-key map (kbd "C-c t") 'run-test-at-point)
     (define-key map (kbd "C-c u") 'rerun-last-test)
     (define-key map (kbd "C-c o") 'open-python-path-at-point)
@@ -92,10 +91,6 @@
 
 (defcustom abl-mode-vems-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
-
-(defcustom abl-mode-start-server-command "scripts/run.sh"
-  "command executed for starting the local server of a web
-  application.")
 
 (defcustom abl-mode-python-executable "python"
   "The executable used to install a package with.")
@@ -306,14 +301,6 @@
 
 ;; <<------------  Running the server and tests  -------->>
 
-(defun run-current-branch ()
-  (interactive)
-  (if (abl-shell-busy)
-      (message "The shell is busy; please end the process before running a test")
-    (progn
-      (abl-mode-exec-command abl-mode-start-server-command)
-      (message (format "Started local server for branch %s" abl-branch)))))
-
 (defun determine-test-function-name ()
   (save-excursion
     (end-of-line)
@@ -519,6 +506,17 @@ followed by a proper class name).")
   (ansi-term
    (expand-file-name "python" (concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
    (concat "Python " abl-mode-vem-name)))
+
+;; Sample custom command
+
+(defun run-current-branch ()
+  (interactive)
+  (if (abl-shell-busy)
+      (message "The shell is busy; please end the process before running a test")
+    (progn
+      (abl-mode-exec-command "runit")
+      (message (format "Started local server for branch %s" abl-branch)))))
+
 
 (provide 'abl-mode)
 
