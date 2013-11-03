@@ -46,7 +46,7 @@
 	  (setq abl-branch-base project-base)
 	  (setq abl-branch (branch-name abl-branch-base))
 	  (setq project-name (get-project-name abl-branch-base))
-	  (setq vem-name (get-vem-name))
+	  (setq abl-mode-vem-name (get-vem-name))
 	  (setq abl-shell-name (shell-name-for-branch
 				project-name
 				abl-branch))))))
@@ -78,37 +78,37 @@
 
 ;; <<------------  Customization options  -------------->>
 
-(defcustom vem-activate-command "vem activate %s"
+(defcustom abl-mode-vem-activate-command "workon %s"
   "The command for activating a virtual environment")
 
-(defcustom vem-create-command "vem create %s"
+(defcustom abl-mode-vem-create-command "mkvirtualenv %s"
   "The command for activating a virtual environment")
 
-(defcustom test-command "nosetests -s %s"
+(defcustom abl-mode-test-command "nosetests -s %s"
   "The command for running tests")
 
-(defcustom branch-shell-prefix "ABL-SHELL:"
+(defcustom abl-mode-branch-shell-prefix "ABL-SHELL:"
   "Prefix for the shell buffers opened")
 
-(defcustom vems-base-dir "~/.virtualenvs"
+(defcustom abl-mode-vems-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
 
-(defcustom start-server-command "scripts/run.sh"
+(defcustom abl-mode-start-server-command "scripts/run.sh"
   "command executed for starting the local server of a web
   application.")
 
-(defcustom abl-python-executable "python"
+(defcustom abl-mode-python-executable "python"
   "The executable used to install a package with.")
 
 ;; <<----------------  Here ends the customization -------------->>
 
-(defvar abl-branch-base ""
+(defvar abl-mode-branch-base ""
   "Base directory of the current branch")
 (make-variable-buffer-local 'abl-branch-base)
 
-(defvar vem-name ""
+(defvar abl-mode-vem-name ""
   "Name of the virtual env")
-(make-variable-buffer-local 'vem-name)
+(make-variable-buffer-local 'abl-mode-vem-name)
 
 (defvar etags-command-base "find %s -name '*.py' -print | etags - -o %s/TAGS"
   "command run to create a tags file for emacs")
@@ -245,7 +245,7 @@
 ;;<< ---------------  Shell stuff  ----------------->>
 
 (defun shell-name-for-branch (project-name branch-name)
-  (concat branch-shell-prefix project-name "_" branch-name))
+  (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
 
 (defun shell-busy (&optional shell-buffer)
   (let* ((real-buffer (or shell-buffer (current-buffer)))
@@ -260,22 +260,21 @@
 	nil
       (shell-busy abl-shell-buffer))))
 
-(defun exec-command (command)
+(defun abl-mode-exec-command (command)
   "This function should be used from inside a non-shell buffer"
-  (let* ((new-or-name (vem-name-or-create vem-name))
+  (let* ((new-or-name (vem-name-or-create abl-mode-vem-name))
 	 (create-vem (cdr new-or-name))
 	 (new-vem-name (car new-or-name))
 	 (commands (if create-vem (list
 				   (concat "cd " abl-branch-base)
-				   (format vem-create-command new-vem-name)
-				   (format vem-activate-command new-vem-name)
-				   (format "%s setup.py develop" abl-python-executable)
+				   (format abl-mode-vem-create-command new-vem-name)
+				   (format abl-mode-vem-activate-command new-vem-name)
+				   (format "%s setup.py develop" abl-mode-python-executable)
 				   command)
 		     (list
 		      (concat "cd " abl-branch-base)
-		      (format vem-activate-command new-vem-name)
+		      (format abl-mode-vem-activate-command new-vem-name)
 		      command))))
-
   (shell abl-shell-name)
   (unless (member abl-shell-name existing-shells) (sleep-for 2))
   (setf existing-shells (append existing-shells '(abl-shell-name)))
@@ -293,7 +292,7 @@
   (let ((replacement-vem (cdr (assoc name replacement-vems))))
     (if replacement-vem
 	(cons replacement-vem nil)
-      (let ((vem-path (expand-file-name name vems-base-dir)))
+      (let ((vem-path (expand-file-name name abl-mode-vems-base-dir)))
 	(if (file-exists-p vem-path)
 	    (cons name nil)
 	  (let*
@@ -312,7 +311,7 @@
   (if (abl-shell-busy)
       (message "The shell is busy; please end the process before running a test")
     (progn
-      (exec-command start-server-command)
+      (abl-mode-exec-command abl-mode-start-server-command)
       (message (format "Started local server for branch %s" abl-branch)))))
 
 (defun determine-test-function-name ()
@@ -372,10 +371,10 @@ followed by a proper class name).")
 (defun run-test (test-path &optional branch-name)
   (if (abl-shell-busy)
       (message "The shell is busy; please end the process before running a test")
-    (let* ((shell-command (format test-command test-path))
+    (let* ((shell-command (format abl-mode-test-command test-path))
 	   (real-branch-name (or branch-name abl-branch)))
       (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
-      (exec-command shell-command)
+      (abl-mode-exec-command shell-command)
       (setq last-test-run (cons test-path abl-branch)))))
 
 
@@ -518,8 +517,8 @@ followed by a proper class name).")
 (defun start-vem-python ()
   (interactive)
   (ansi-term
-   (expand-file-name "python" (concat-paths vems-base-dir  vem-name "bin"))
-   (concat "Python " vem-name)))
+   (expand-file-name "python" (concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
+   (concat "Python " abl-mode-vem-name)))
 
 (provide 'abl-mode)
 

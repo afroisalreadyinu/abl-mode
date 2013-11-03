@@ -1,7 +1,7 @@
 ;; to run the tests:
 ;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
 
-(require 'abl)
+(require 'abl-mode)
 (require 'ert)
 
 (defun write-to-file (file-path string)
@@ -65,7 +65,7 @@
 (defun cleanup (path)
   ;; rm -rf's a folder which begins with /tmp. you shouldn't put
   ;; important stuff into /tmp.
-  (unless (starts-with path "/tmp")
+  (unless (or (starts-with path "/tmp") (starts-with path "/var/folders/"))
     (error
      (format "Tried to cleanup a path (%s) not in /tmp; refusing to do so."
 	     path)))
@@ -148,7 +148,7 @@
      (buffer-local-value 'abl-branch buffer)
      (buffer-local-value 'abl-branch-base buffer)
      (buffer-local-value 'project-name buffer)
-     (buffer-local-value 'vem-name buffer)
+     (buffer-local-value 'abl-mode-vem-name buffer)
      (buffer-local-value 'abl-shell-name buffer))))
 
 
@@ -164,7 +164,8 @@ vem is created."
      (unwind-protect
 	 (progn
 	   ,@tests-etc)
-	 (cleanup base-dir))))
+	 ;;(cleanup base-dir)
+	 )))
 
 
 (ert-deftest test-empty-git-abl ()
@@ -216,11 +217,11 @@ vem is created."
     (let* ((abl-values (abl-values-for-path test-file-path))
 	   (test-path (get-test-entity))
 	   (vemname (nth 4 abl-values)))
-      (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
-      (setq test-command (concat "echo '%s' > " test-proof-file-path))
-      (setq vems-base-dir (make-temp-file "vems" 't))
+      (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+      (setq abl-mode-test-command (concat "echo '%s' > " test-proof-file-path))
+      (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
       (shell-command-to-string (format "virtualenv %s"
-				       (concat-paths vems-base-dir vemname)))
+				       (concat-paths abl-mode-vems-base-dir vemname)))
       (should (string-equal test-path "aproject.test:AblTest.test_abl_mode"))
       (run-test-at-point)
       (sleep-for 1)
@@ -245,7 +246,7 @@ vem is created."
       (save-excursion
 	(find-file run-proof-file-path)
 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) base-dir)))
-      (cleanup vems-base-dir))))
+      (cleanup abl-mode-vems-base-dir))))
 
 (ert-deftest test-replacement-vem ()
   (abl-git-test
@@ -256,14 +257,14 @@ vem is created."
 	   (branch-vemname (concat project-name "_" new-branch))
 	   (test-buff (find-file test-file-path)))
       (goto-char (point-max))
-      (setq vems-base-dir (make-temp-file "vems" 't))
+      (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
       (shell-command-to-string (format "virtualenv %s"
-				       (concat-paths vems-base-dir master-vemname)))
+				       (concat-paths abl-mode-vems-base-dir master-vemname)))
       (should (= 0 (length replacement-vems)))
 
       (branch-git base-dir new-branch)
       (setq replacement-vems (list (cons branch-vemname master-vemname)))
-      (setq vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+      (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
 
       (revert-buffer test-buff t nil)
       (goto-char (point-max))
@@ -275,7 +276,7 @@ vem is created."
 	(should (string= (buffer-substring (point-min) (- (point-max) 1))
 			 master-vemname)))
 
-      (cleanup vems-base-dir)
+      (cleanup abl-mode-vems-base-dir)
       )))
 
 
