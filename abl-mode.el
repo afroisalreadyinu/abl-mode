@@ -40,14 +40,14 @@
   (setq abl-mode (if (null arg) (not abl-mode)
 		   (> (prefix-numeric-value arg) 0)))
   (if abl-mode
-      (let ((project-base (find-base-dir)))
+      (let ((project-base (abl-mode-find-base-dir)))
 	(if (not project-base)
 	    (setq abl-mode nil)
 	  (setq abl-mode-branch-base project-base)
-	  (setq abl-mode-branch (branch-name abl-mode-branch-base))
+	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
-	  (setq abl-mode-vem-name (get-vem-name))
-	  (setq abl-mode-shell-name (shell-name-for-branch
+	  (setq abl-mode-vem-name (abl-mode-get-vem-name))
+	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				abl-mode-project-name
 				abl-mode-branch))))))
 
@@ -61,12 +61,12 @@
 
 (defvar abl-mode-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c t") 'run-test-at-point)
-    (define-key map (kbd "C-c u") 'rerun-last-test)
-    (define-key map (kbd "C-c o") 'open-python-path-at-point)
-    (define-key map (kbd "C-c a") 'revert-all-buffers)
-    (define-key map (kbd "C-c w") 'display-branch)
-    (define-key map (kbd "C-c s") 'start-vem-python)
+    (define-key map (kbd "C-c t") 'abl-mode-run-test-at-point)
+    (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
+    (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
+    (define-key map (kbd "C-c a") 'abl-mode-revert-all-buffers)
+    (define-key map (kbd "C-c w") 'abl-mode-display-branch)
+    (define-key map (kbd "C-c s") 'abl-mode-start-vem-python)
     map)
   "The keymap for abl-mode")
 
@@ -176,12 +176,12 @@
 	     (concat "/" (car components))
 	     (abl-mode-remove-last (cdr components))))))
 
-(defun last-path-comp (path)
+(defun abl-mode-last-path-comp (path)
   "Get the last path components, whether it's a file name or directory"
   (and (< 0 (length path))
        (car (last (split-string (abl-mode-remove-last-slash path) "/")))))
 
-(defun find-base-dir (&optional dir-path)
+(defun abl-mode-find-base-dir (&optional dir-path)
   (let* ((path (or dir-path (buffer-file-name))))
     (if (and (file-exists-p (abl-mode-concat-paths path "setup.py"))
 	     (not (file-exists-p (abl-mode-concat-paths path "__init__.py"))))
@@ -189,14 +189,36 @@
       (let ((higher (abl-mode-higher-dir path)))
 	(if (not higher)
 	    nil
-	  (find-base-dir higher))))))
+	  (abl-mode-find-base-dir higher))))))
 
-(defun git-or-svn (base-dir)
+
+(defun abl-mode-string-in-buffer (string)
+  (save-excursion
+    (goto-char (point-min))
+    (if (search-forward string nil t)
+	t
+      nil)))
+
+(defun abl-mode-join-string (string-list joiner)
+  (cond ((not (cdr string-list)) (car string-list))
+	 (t (concat
+	     (car string-list)
+	     joiner
+	     (abl-mode-join-string (cdr string-list) joiner)))))
+
+(defun abl-mode-starts-uppercase? (strng)
+  (let ((y (substring strng 0 1))) (string= y (upcase y))))
+
+
+
+;; ------------------------------------
+
+(defun abl-mode-git-or-svn (base-dir)
   (cond ((file-exists-p (abl-mode-concat-paths base-dir ".git")) "git")
 	((file-exists-p (abl-mode-concat-paths base-dir ".svn")) "svn")
 	(t nil)))
 
-(defun get-git-branch-name (base-dir)
+(defun abl-mode-get-git-branch-name (base-dir)
   (let* ((command (concat "cd " base-dir " && git branch"))
 	(git-output (shell-command-to-string command)))
     (if (string-equal git-output "")
@@ -207,14 +229,14 @@
       (substring git-output (match-beginning 1) (match-end 1)))))
 
 
-(defun branch-name (path)
+(defun abl-mode-branch-name (path)
   (if (string= path "/")
       nil
-    (let ((vcs (git-or-svn path)))
+    (let ((vcs (abl-mode-git-or-svn path)))
       (cond ((or (not vcs) (string-equal vcs "svn"))
-	     (last-path-comp path))
+	     (abl-mode-last-path-comp path))
 	    ((string-equal vcs "git")
-	     (get-git-branch-name path))
+	     (abl-mode-get-git-branch-name path))
 	    (t nil)))))
 
 
@@ -223,14 +245,14 @@
    directory name for git."
   (if (string= path "/")
       nil
-    (let ((vcs (git-or-svn path)))
+    (let ((vcs (abl-mode-git-or-svn path)))
       (cond ((or (not vcs) (string-equal vcs "svn"))
-	     (last-path-comp (abl-mode-higher-dir path)))
+	     (abl-mode-last-path-comp (abl-mode-higher-dir path)))
 	    ((string-equal vcs "git")
-	     (last-path-comp path))
+	     (abl-mode-last-path-comp path))
 	    (t nil)))))
 
-(defun get-vem-name (&optional branch project)
+(defun abl-mode-get-vem-name (&optional branch project)
   (let ((branch-name (or branch abl-mode-branch))
 	(prjct-name (or project abl-mode-project-name)))
     (or
@@ -239,10 +261,10 @@
 
 ;;<< ---------------  Shell stuff  ----------------->>
 
-(defun shell-name-for-branch (project-name branch-name)
+(defun abl-mode-shell-name-for-branch (project-name branch-name)
   (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
 
-(defun shell-busy (&optional shell-buffer)
+(defun abl-mode-shell-busy (&optional shell-buffer)
   (let* ((real-buffer (or shell-buffer (current-buffer)))
 	 (shell-process-id (process-id (get-buffer-process real-buffer)))
 	 (command (format "ps --ppid %d  h | wc -l" shell-process-id))
@@ -253,11 +275,11 @@
   (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
     (if (not abl-shell-buffer)
 	nil
-      (shell-busy abl-shell-buffer))))
+      (abl-mode-shell-busy abl-shell-buffer))))
 
 (defun abl-mode-exec-command (command)
   "This function should be used from inside a non-shell buffer"
-  (let* ((new-or-name (vem-name-or-create abl-mode-vem-name))
+  (let* ((new-or-name (abl-mode-vem-name-or-create abl-mode-vem-name))
 	 (create-vem (cdr new-or-name))
 	 (new-vem-name (car new-or-name))
 	 (commands (if create-vem (list
@@ -273,17 +295,17 @@
   (shell abl-mode-shell-name)
   (unless (member abl-mode-shell-name abl-mode-existing-shells) (sleep-for 2))
   (setf abl-mode-existing-shells (append abl-mode-existing-shells '(abl-mode-shell-name)))
-  (run-command (join-string commands " && "))
+  (abl-mode-run-command (abl-mode-join-string commands " && "))
   (if (> (length (get-buffer-window-list abl-mode-shell-name nil t)) 1)
       (delete-window))))
 
-(defun run-command (command)
+(defun abl-mode-run-command (command)
   "This function should be used when inside a shell"
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
-(defun vem-name-or-create (name)
+(defun abl-mode-vem-name-or-create (name)
   (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
     (if replacement-vem
 	(cons replacement-vem nil)
@@ -297,11 +319,11 @@
 	       (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
 	    (if create-new
 		(cons name create-new)
-	      (vem-name-or-create vem-or-y))))))))
+	      (abl-mode-vem-name-or-create vem-or-y))))))))
 
 ;; <<------------  Running the server and tests  -------->>
 
-(defun determine-test-function-name ()
+(defun abl-mode-determine-test-function-name ()
   (save-excursion
     (end-of-line)
     (if (not (re-search-backward "^ *def test_*" nil t))
@@ -313,7 +335,7 @@
 	(buffer-substring-no-properties start (point))))))
 
 
-(defun determine-test-class-name ()
+(defun abl-mode-determine-test-class-name ()
   (save-excursion
     (if (not (re-search-backward "^class *" nil t))
 	(error "Looks like there is a problem with your python code (functions is indented
@@ -328,7 +350,7 @@ followed by a proper class name).")
 
 ;;this function assumes that you are already in a test function (see
 ;;the function above)
-(defun test-in-class ()
+(defun abl-mode-test-in-class ()
   (save-excursion
     (end-of-line)
     (let* ((start (re-search-backward "^ *def *"))
@@ -336,7 +358,7 @@ followed by a proper class name).")
       (> (- end start 1) 0))))
 
 
-(defun get-test-file-path ()
+(defun abl-mode-get-test-file-path ()
   (let ((buffer-name (buffer-file-name)))
     (if (not (abl-mode-ends-with buffer-name ".py"))
 	(error "You do not appear to be in a python file. Now open a python file!"))
@@ -347,15 +369,15 @@ followed by a proper class name).")
       (replace-regexp-in-string "/" "." relative-path))))
 
 
-(defun get-test-function-path (file-path)
-  (let ((function-name (determine-test-function-name)))
-    (if (not (test-in-class))
+(defun abl-mode-get-test-function-path (file-path)
+  (let ((function-name (abl-mode-determine-test-function-name)))
+    (if (not (abl-mode-test-in-class))
 	(concat file-path ":" function-name)
-      (let ((class-name (determine-test-class-name)))
+      (let ((class-name (abl-mode-determine-test-class-name)))
 	(concat file-path ":" class-name "." function-name)))))
 
 
-(defun run-test (test-path &optional branch-name)
+(defun abl-mode-run-test (test-path &optional branch-name)
   (if (abl-shell-busy)
       (message "The shell is busy; please end the process before running a test")
     (let* ((shell-command (format abl-mode-test-command test-path))
@@ -367,8 +389,8 @@ followed by a proper class name).")
 
 ;This returns the python destination on point, depending on
 ;whether it is a test function, class, or whole file
-(defun get-test-entity ()
-  (let ((file-path (get-test-file-path)))
+(defun abl-mode-get-test-entity ()
+  (let ((file-path (abl-mode-get-test-file-path)))
     (if (= (line-number-at-pos) 1)
 	file-path
       (let* ((test-func-pos
@@ -382,22 +404,22 @@ followed by a proper class name).")
 	  (error "You are neither in a test class nor a test function."))
 	 ((and test-func-pos
 	       (and test-class-pos (< test-class-pos test-func-pos)))
-	  (get-test-function-path file-path))
-	 (test-class-pos (concat file-path ":" (determine-test-class-name))))))))
+	  (abl-mode-get-test-function-path file-path))
+	 (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name))))))))
 
-(defun run-test-at-point ()
+(defun abl-mode-run-test-at-point ()
   (interactive)
-  (let* ((test-path (get-test-entity)))
-    (run-test test-path)))
+  (let* ((test-path (abl-mode-get-test-entity)))
+    (abl-mode-run-test test-path)))
 
-(defun rerun-last-test ()
+(defun abl-mode-rerun-last-test ()
   (interactive)
   (if (not abl-mode-last-test-run)
       (message "You haven't run any tests yet.")
-    (run-test (car abl-mode-last-test-run) (cdr abl-mode-last-test-run))))
+    (abl-mode-run-test (car abl-mode-last-test-run) (cdr abl-mode-last-test-run))))
 
 ;the command: "find . -name *.py -print | etags -"
-(defun create-etags-file ()
+(defun abl-mode-create-etags-file ()
   (interactive)
   (let ((tag-file-path (abl-mode-concat-paths abl-mode-branch-base "TAGS")))
     (if (or (not (file-exists-p tag-file-path))
@@ -411,32 +433,13 @@ followed by a proper class name).")
 	  (shell-command-to-string etags-command)))))
 
 
-(defun string-in-buffer (string)
-  (save-excursion
-    (goto-char (point-min))
-    (if (search-forward string nil t)
-	t
-      nil)))
-
-
-(defun join-string (string-list joiner)
-  (cond ((not (cdr string-list)) (car string-list))
-	 (t (concat
-	     (car string-list)
-	     joiner
-	     (join-string (cdr string-list) joiner)))))
-
-(defun starts-uppercase? (strng)
-  (let ((y (substring strng 0 1))) (string= y (upcase y))))
-
-
-(defun parse-python-path (python-path)
+(defun abl-mode-parse-python-path (python-path)
   (let* ((colon-index (string-match ":" python-path))
 	 (file-part (if colon-index
 			(substring python-path 0 colon-index)
 		      python-path))
 	 (file-path (expand-file-name
-		     (concat (join-string (split-string file-part "\\.") "/") ".py")
+		     (concat (abl-mode-join-string (split-string file-part "\\.") "/") ".py")
 		     abl-mode-branch-base))
 	 (internal-part (if colon-index
 			    (substring python-path (+ colon-index 1) (length python-path))
@@ -447,20 +450,20 @@ followed by a proper class name).")
 		  (cons (substring internal-part 0 internal-part-dot-index)
 			(substring internal-part (+ internal-part-dot-index 1)
 				   (length internal-part))))
-		 ((and internal-part (not internal-part-dot-index) (starts-uppercase? internal-part))
+		 ((and internal-part (not internal-part-dot-index) (abl-mode-starts-uppercase? internal-part))
 		  (cons internal-part nil))
 		 (t (cons nil internal-part)))))
       (list file-path (car class-and-func-name) (cdr class-and-func-name)))))
 
 
-(defun open-python-path-at-point ()
+(defun abl-mode-open-python-path-at-point ()
   (interactive)
   (save-excursion
     (re-search-backward "[^a-zA-Z0-9:_\.]" nil t)
     (forward-char)
     (let ((start (point))
 	  (end (- (re-search-forward "[^a-zA-Z0-9:_\.]" nil t) 1)))
-      (let ((python-path-info (parse-python-path (buffer-substring-no-properties start end))))
+      (let ((python-path-info (abl-mode-parse-python-path (buffer-substring-no-properties start end))))
 	(let ((file-path (car python-path-info))
 	      (class-name (cadr python-path-info))
 	      (func-name (caddr python-path-info)))
@@ -472,7 +475,7 @@ followed by a proper class name).")
 	  (if func-name (search-forward (concat "def " func-name))))))))
 
 
-(defun revert-or-skip (&optional buff)
+(defun abl-mode-revert-or-skip (&optional buff)
   "Reverts a buffer in abl-mode if it is not modified"
   (let ((buffer (or buff (current-buffer))))
     (when (and (local-variable-p 'abl-mode)
@@ -488,20 +491,20 @@ followed by a proper class name).")
 	nil
 	)))))
 
-(defun revert-all-buffers()
+(defun abl-mode-revert-all-buffers()
   "Refreshs all non-modified open buffers with the function above"
   (interactive)
-  (let ((modified-files (delq nil (mapcar 'revert-or-skip (buffer-list)))))
+  (let ((modified-files (delq nil (mapcar 'abl-mode-revert-or-skip (buffer-list)))))
     (if modified-files
-	(message (concat "Following buffers have modifications: " (join-string modified-files " , ")))
+	(message (concat "Following buffers have modifications: " (abl-mode-join-string modified-files " , ")))
       (message "Refreshed open files"))))
 
-(defun display-branch()
+(defun abl-mode-display-branch()
   "Displays the name of the branch on which the current buffer is"
   (interactive)
   (message (concat "Current branch: " abl-mode-branch)))
 
-(defun start-vem-python ()
+(defun abl-mode-start-vem-python ()
   (interactive)
   (ansi-term
    (expand-file-name "python" (abl-mode-concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
