@@ -43,13 +43,13 @@
       (let ((project-base (find-base-dir)))
 	(if (not project-base)
 	    (setq abl-mode nil)
-	  (setq abl-branch-base project-base)
-	  (setq abl-branch (branch-name abl-branch-base))
-	  (setq project-name (get-project-name abl-branch-base))
+	  (setq abl-mode-branch-base project-base)
+	  (setq abl-mode-branch (branch-name abl-mode-branch-base))
+	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
 	  (setq abl-mode-vem-name (get-vem-name))
-	  (setq abl-shell-name (shell-name-for-branch
-				project-name
-				abl-branch))))))
+	  (setq abl-mode-shell-name (shell-name-for-branch
+				abl-mode-project-name
+				abl-mode-branch))))))
 
 (defun abl-mode-hook ()
   (abl-mode))
@@ -99,101 +99,101 @@
 
 (defvar abl-mode-branch-base ""
   "Base directory of the current branch")
-(make-variable-buffer-local 'abl-branch-base)
+(make-variable-buffer-local 'abl-mode-branch-base)
 
 (defvar abl-mode-vem-name ""
   "Name of the virtual env")
 (make-variable-buffer-local 'abl-mode-vem-name)
 
-(defvar etags-command-base "find %s -name '*.py' -print | etags - -o %s/TAGS"
+(defvar abl-mode-etags-command-base "find %s -name '*.py' -print | etags - -o %s/TAGS"
   "command run to create a tags file for emacs")
 
-(defvar abl-branch "master"
+(defvar abl-mode-branch "master"
   "The branch you are working on.When abl-mode is started, it is
   set to the name of the directory in which you are for svn, the
   git branch if you're on git.")
-(make-variable-buffer-local 'abl-branch)
+(make-variable-buffer-local 'abl-mode-branch)
 
-(defvar abl-shell-name "ABL-SHELL")
-(make-variable-buffer-local 'abl-shell-name)
+(defvar abl-mode-shell-name "ABL-SHELL")
+(make-variable-buffer-local 'abl-mode-shell-name)
 
-(defvar project-name "web"
+(defvar abl-mode-project-name "web"
   "The name of the project. ")
-(make-variable-buffer-local 'project-name)
+(make-variable-buffer-local 'abl-mode-project-name)
 
-(defvar last-test-run nil
+(defvar abl-mode-last-test-run nil
   "Last test run and which branch it was")
 
-(defvar existing-shells '())
+(defvar abl-mode-existing-shells '())
 
-(defvar replacement-vems '())
+(defvar abl-mode-replacement-vems '())
 
 ;; <<------------- Helpers  ------------->>
 
-(defun starts-with (str1 str2)
+(defun abl-mode-starts-with (str1 str2)
   (and (> (length str1) 0)
        (string= str2
 		(substring str1 0 (length str2)))))
 
-(defun ends-with (str1 str2)
+(defun abl-mode-ends-with (str1 str2)
   (let ((str1-length (length str1)))
     (and (> str1-length 0)
 	 (string= (substring str1 (- str1-length (length str2)) str1-length) str2))))
 
-(defun remove-last (lst)
+(defun abl-mode-remove-last (lst)
   (if (not (cdr lst))
       '()
-    (cons (car lst) (remove-last (cdr lst)))))
+    (cons (car lst) (abl-mode-remove-last (cdr lst)))))
 
-(defun index-of (substr str1)
+(defun abl-mode-index-of (substr str1)
   (cond ((< (length str1) (length substr)) nil)
 	((string= substr (substring str1 0 (length substr))) 0)
-	(t (let ((rest-return (index-of substr (substring str1 1 (length str1)))))
+	(t (let ((rest-return (abl-mode-index-of substr (substring str1 1 (length str1)))))
 	     (if (null rest-return) nil
 	       (+ rest-return 1))))))
 
-(defun concat-paths (base &rest paths)
+(defun abl-mode-concat-paths (base &rest paths)
   "join a list of path components into a path"
   (if (equal paths '())
       base
-    (apply 'concat-paths
+    (apply 'abl-mode-concat-paths
 	   (concat (file-name-as-directory base) (car paths))
 	   (cdr paths))))
 
-(defun remove-last-slash (path)
-  (if (ends-with path "/")
+(defun abl-mode-remove-last-slash (path)
+  (if (abl-mode-ends-with path "/")
       (substring path 0 (- (length path) 1))
     path))
 
-(defun higher-dir (path)
+(defun abl-mode-higher-dir (path)
   "Return one higher directory of a given path"
-  (assert (starts-with path "/"))
+  (assert (abl-mode-starts-with path "/"))
   (if (string-equal "/" path)
       nil
-    (let* ((true-path (remove-last-slash path))
+    (let* ((true-path (abl-mode-remove-last-slash path))
 	   (components (split-string true-path "/" )))
-      (apply 'concat-paths
+      (apply 'abl-mode-concat-paths
 	     (concat "/" (car components))
-	     (remove-last (cdr components))))))
+	     (abl-mode-remove-last (cdr components))))))
 
 (defun last-path-comp (path)
   "Get the last path components, whether it's a file name or directory"
   (and (< 0 (length path))
-       (car (last (split-string (remove-last-slash path) "/")))))
+       (car (last (split-string (abl-mode-remove-last-slash path) "/")))))
 
 (defun find-base-dir (&optional dir-path)
   (let* ((path (or dir-path (buffer-file-name))))
-    (if (and (file-exists-p (concat-paths path "setup.py"))
-	     (not (file-exists-p (concat-paths path "__init__.py"))))
+    (if (and (file-exists-p (abl-mode-concat-paths path "setup.py"))
+	     (not (file-exists-p (abl-mode-concat-paths path "__init__.py"))))
 	path
-      (let ((higher (higher-dir path)))
+      (let ((higher (abl-mode-higher-dir path)))
 	(if (not higher)
 	    nil
 	  (find-base-dir higher))))))
 
 (defun git-or-svn (base-dir)
-  (cond ((file-exists-p (concat-paths base-dir ".git")) "git")
-	((file-exists-p (concat-paths base-dir ".svn")) "svn")
+  (cond ((file-exists-p (abl-mode-concat-paths base-dir ".git")) "git")
+	((file-exists-p (abl-mode-concat-paths base-dir ".svn")) "svn")
 	(t nil)))
 
 (defun get-git-branch-name (base-dir)
@@ -218,23 +218,23 @@
 	    (t nil)))))
 
 
-(defun get-project-name (path)
+(defun abl-mode-get-project-name (path)
   "Returns the name of the project; higher directory for no vcs or svn,
    directory name for git."
   (if (string= path "/")
       nil
     (let ((vcs (git-or-svn path)))
       (cond ((or (not vcs) (string-equal vcs "svn"))
-	     (last-path-comp (higher-dir path)))
+	     (last-path-comp (abl-mode-higher-dir path)))
 	    ((string-equal vcs "git")
 	     (last-path-comp path))
 	    (t nil)))))
 
 (defun get-vem-name (&optional branch project)
-  (let ((branch-name (or branch abl-branch))
-	(prjct-name (or project project-name)))
+  (let ((branch-name (or branch abl-mode-branch))
+	(prjct-name (or project abl-mode-project-name)))
     (or
-     (cdr (assoc branch-name replacement-vems))
+     (cdr (assoc branch-name abl-mode-replacement-vems))
      (concat prjct-name "_" branch-name))))
 
 ;;<< ---------------  Shell stuff  ----------------->>
@@ -250,7 +250,7 @@
     (/= (string-to-number output) 0)))
 
 (defun abl-shell-busy ()
-  (let ((abl-shell-buffer (get-buffer abl-shell-name)))
+  (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
     (if (not abl-shell-buffer)
 	nil
       (shell-busy abl-shell-buffer))))
@@ -261,20 +261,20 @@
 	 (create-vem (cdr new-or-name))
 	 (new-vem-name (car new-or-name))
 	 (commands (if create-vem (list
-				   (concat "cd " abl-branch-base)
+				   (concat "cd " abl-mode-branch-base)
 				   (format abl-mode-vem-create-command new-vem-name)
 				   (format abl-mode-vem-activate-command new-vem-name)
 				   (format "%s setup.py develop" abl-mode-python-executable)
 				   command)
 		     (list
-		      (concat "cd " abl-branch-base)
+		      (concat "cd " abl-mode-branch-base)
 		      (format abl-mode-vem-activate-command new-vem-name)
 		      command))))
-  (shell abl-shell-name)
-  (unless (member abl-shell-name existing-shells) (sleep-for 2))
-  (setf existing-shells (append existing-shells '(abl-shell-name)))
+  (shell abl-mode-shell-name)
+  (unless (member abl-mode-shell-name abl-mode-existing-shells) (sleep-for 2))
+  (setf abl-mode-existing-shells (append abl-mode-existing-shells '(abl-mode-shell-name)))
   (run-command (join-string commands " && "))
-  (if (> (length (get-buffer-window-list abl-shell-name nil t)) 1)
+  (if (> (length (get-buffer-window-list abl-mode-shell-name nil t)) 1)
       (delete-window))))
 
 (defun run-command (command)
@@ -284,7 +284,7 @@
   (comint-send-input))
 
 (defun vem-name-or-create (name)
-  (let ((replacement-vem (cdr (assoc name replacement-vems))))
+  (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
     (if replacement-vem
 	(cons replacement-vem nil)
       (let ((vem-path (expand-file-name name abl-mode-vems-base-dir)))
@@ -338,11 +338,11 @@ followed by a proper class name).")
 
 (defun get-test-file-path ()
   (let ((buffer-name (buffer-file-name)))
-    (if (not (ends-with buffer-name ".py"))
+    (if (not (abl-mode-ends-with buffer-name ".py"))
 	(error "You do not appear to be in a python file. Now open a python file!"))
     (let ((relative-path (substring
 			  buffer-file-name
-			  (+ (length abl-branch-base) 1)
+			  (+ (length abl-mode-branch-base) 1)
 			  (- (length buffer-name) 3))))
       (replace-regexp-in-string "/" "." relative-path))))
 
@@ -359,10 +359,10 @@ followed by a proper class name).")
   (if (abl-shell-busy)
       (message "The shell is busy; please end the process before running a test")
     (let* ((shell-command (format abl-mode-test-command test-path))
-	   (real-branch-name (or branch-name abl-branch)))
+	   (real-branch-name (or branch-name abl-mode-branch)))
       (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
       (abl-mode-exec-command shell-command)
-      (setq last-test-run (cons test-path abl-branch)))))
+      (setq abl-mode-last-test-run (cons test-path abl-mode-branch)))))
 
 
 ;This returns the python destination on point, depending on
@@ -392,22 +392,22 @@ followed by a proper class name).")
 
 (defun rerun-last-test ()
   (interactive)
-  (if (not last-test-run)
+  (if (not abl-mode-last-test-run)
       (message "You haven't run any tests yet.")
-    (run-test (car last-test-run) (cdr last-test-run))))
+    (run-test (car abl-mode-last-test-run) (cdr abl-mode-last-test-run))))
 
 ;the command: "find . -name *.py -print | etags -"
 (defun create-etags-file ()
   (interactive)
-  (let ((tag-file-path (concat-paths abl-branch-base "TAGS")))
+  (let ((tag-file-path (abl-mode-concat-paths abl-mode-branch-base "TAGS")))
     (if (or (not (file-exists-p tag-file-path))
 	    (if (y-or-n-p "Tags file alread exists, recreate?")
 		(progn
 		  (delete-file tag-file-path)
 		  t)))
-	(let ((etags-command (format etags-command-base
-				     abl-branch-base
-				     abl-branch-base)))
+	(let ((etags-command (format abl-mode-etags-command-base
+				     abl-mode-branch-base
+				     abl-mode-branch-base)))
 	  (shell-command-to-string etags-command)))))
 
 
@@ -437,7 +437,7 @@ followed by a proper class name).")
 		      python-path))
 	 (file-path (expand-file-name
 		     (concat (join-string (split-string file-part "\\.") "/") ".py")
-		     abl-branch-base))
+		     abl-mode-branch-base))
 	 (internal-part (if colon-index
 			    (substring python-path (+ colon-index 1) (length python-path))
 			  nil))
@@ -499,12 +499,12 @@ followed by a proper class name).")
 (defun display-branch()
   "Displays the name of the branch on which the current buffer is"
   (interactive)
-  (message (concat "Current branch: " abl-branch)))
+  (message (concat "Current branch: " abl-mode-branch)))
 
 (defun start-vem-python ()
   (interactive)
   (ansi-term
-   (expand-file-name "python" (concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
+   (expand-file-name "python" (abl-mode-concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
    (concat "Python " abl-mode-vem-name)))
 
 ;; Sample custom command
@@ -515,7 +515,7 @@ followed by a proper class name).")
       (message "The shell is busy; please end the process before running a test")
     (progn
       (abl-mode-exec-command "runit")
-      (message (format "Started local server for branch %s" abl-branch)))))
+      (message (format "Started local server for branch %s" abl-mode-branch)))))
 
 
 (provide 'abl-mode)
