@@ -64,7 +64,6 @@
     (define-key map (kbd "C-c t") 'abl-mode-run-test-at-point)
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
     (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
-    (define-key map (kbd "C-c a") 'abl-mode-revert-all-buffers)
     (define-key map (kbd "C-c w") 'abl-mode-display-branch)
     (define-key map (kbd "C-c s") 'abl-mode-start-vem-python)
     map)
@@ -92,8 +91,8 @@
 (defcustom abl-mode-vems-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
 
-(defcustom abl-mode-python-executable "python"
-  "The executable used to install a package with.")
+(defcustom abl-mode-install-command "python setup.py develop"
+  "The command to install a package.")
 
 ;; <<----------------  Here ends the customization -------------->>
 
@@ -286,18 +285,25 @@
 				   (concat "cd " abl-mode-branch-base)
 				   (format abl-mode-vem-create-command new-vem-name)
 				   (format abl-mode-vem-activate-command new-vem-name)
-				   (format "%s setup.py develop" abl-mode-python-executable)
+				   abl-mode-install-command
 				   command)
 		     (list
 		      (concat "cd " abl-mode-branch-base)
 		      (format abl-mode-vem-activate-command new-vem-name)
-		      command))))
-  (shell abl-mode-shell-name)
-  (unless (member abl-mode-shell-name abl-mode-existing-shells) (sleep-for 2))
-  (setf abl-mode-existing-shells (append abl-mode-existing-shells '(abl-mode-shell-name)))
-  (abl-mode-run-command (abl-mode-join-string commands " && "))
-  (if (> (length (get-buffer-window-list abl-mode-shell-name nil t)) 1)
-      (delete-window))))
+		      command)))
+	 (shell-name abl-mode-shell-name)
+	 (already-open-shell (get-buffer-window-list shell-name nil t))
+	 (code-window (selected-window)))
+
+    (if (> (length already-open-shell) 0)
+	(select-window (car already-open-shell))
+      (shell shell-name))
+    (unless (member shell-name abl-mode-existing-shells)
+      (sleep-for 2)
+      (setf abl-mode-existing-shells (append abl-mode-existing-shells '(shell-name))))
+    (abl-mode-run-command (abl-mode-join-string commands " && "))
+    (select-window code-window)))
+
 
 (defun abl-mode-run-command (command)
   "This function should be used when inside a shell"
@@ -474,30 +480,6 @@ followed by a proper class name).")
 	  (if class-name (search-forward (concat "class " class-name)))
 	  (if func-name (search-forward (concat "def " func-name))))))))
 
-
-(defun abl-mode-revert-or-skip (&optional buff)
-  "Reverts a buffer in abl-mode if it is not modified"
-  (let ((buffer (or buff (current-buffer))))
-    (when (and (local-variable-p 'abl-mode)
-	       (buffer-local-value 'abl-mode buffer))
-      (message (buffer-name buffer))
-      (if (buffer-modified-p buffer)
-	  (progn (message (concat "Buffer " (buffer-name buffer) " is modified"))
-		 (buffer-name buffer))
-      (progn
-	(set-buffer buffer)
-	(revert-buffer t t t)
-	(abl-mode t)
-	nil
-	)))))
-
-(defun abl-mode-revert-all-buffers()
-  "Refreshs all non-modified open buffers with the function above"
-  (interactive)
-  (let ((modified-files (delq nil (mapcar 'abl-mode-revert-or-skip (buffer-list)))))
-    (if modified-files
-	(message (concat "Following buffers have modifications: " (abl-mode-join-string modified-files " , ")))
-      (message "Refreshed open files"))))
 
 (defun abl-mode-display-branch()
   "Displays the name of the branch on which the current buffer is"

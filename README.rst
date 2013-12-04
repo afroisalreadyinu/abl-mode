@@ -104,42 +104,33 @@ the following in your .emacs file::
 String formatting is similar to the way it is done in Python; %s gets
 replaced by the relevant value when the option gets used.
 
-+---------------------+--------------------------------------+
-|nose-command         |The command which is used to run unit |
-|                     |tests. Default: nose -s %s            |
-|                     |                                      |
-|                     |                                      |
-|                     |                                      |
-+---------------------+--------------------------------------+
-|vem-activate-command |The command used for activating a     |
-|                     |python virtual environment. Default:  |
-|                     |vem_activate %s                       |
-+---------------------+--------------------------------------+
-|vem-create-command   |The command used for activating a     |
-|                     |python virtual environment.  Default: |
-|                     |vem create %s                         |
-+---------------------+--------------------------------------+
-|vems-base-dir        |The directory in which new virtual    |
-|                     |environments are stored. This should  |
-|                     |be the same directory in which the    |
-|                     |above mentioned vem commands create   |
-|                     |the environments. Default:            |
-|                     |~/.virtualenvs                        |
-+---------------------+--------------------------------------+
-|branch-shell-prefix  |The string appended to the name of the|
-|                     |shell buffer created to run tests or  |
-|                     |wsgi server. Default: ABL-SHELL:      |
-+---------------------+--------------------------------------+
-|abl-python-executable|The python executable used for        |
-|                     |installing a python package (i.e. the |
-|                     |python in “python setup.py develop”)  |
-+---------------------+--------------------------------------+
-
-
-
-
-
-
-
-
-
++------------------------------------------+--------------------------------------+
+|nose-command                              |The command which is used to run unit |
+|                                          |tests. Default: nose -s %s            |
+|                                          |                                      |
+|                                          |                                      |
+|                                          |                                      |
++------------------------------------------+--------------------------------------+
+|vem-activate-command                      |The command used for activating a     |
+|                                          |python virtual environment. Default:  |
+|                                          |vem_activate %s                       |
++------------------------------------------+--------------------------------------+
+|vem-create-command                        |The command used for activating a     |
+|                                          |python virtual environment.  Default: |
+|                                          |vem create %s                         |
++------------------------------------------+--------------------------------------+
+|vems-base-dir                             |The directory in which new virtual    |
+|                                          |environments are stored. This should  |
+|                                          |be the same directory in which the    |
+|                                          |above mentioned vem commands create   |
+|                                          |the environments. Default:            |
+|                                          |~/.virtualenvs                        |
++------------------------------------------+--------------------------------------+
+|abl-mode-install-command                  |The command used to install a         |
+|                                          |development package. Default is       |
+|                                          |"python setup.py develop".            |
++------------------------------------------+--------------------------------------+
+|branch-shell-prefix                       |The string appended to the name of the|
+|                                          |shell buffer created to run tests or  |
+|                                          |wsgi server. Default: ABL-SHELL:      |
++------------------------------------------+--------------------------------------+
