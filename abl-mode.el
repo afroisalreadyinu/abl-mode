@@ -123,8 +123,6 @@
 (defvar abl-mode-last-test-run nil
   "Last test run and which branch it was")
 
-(defvar abl-mode-existing-shells '())
-
 (defvar abl-mode-replacement-vems '())
 
 ;; <<------------- Helpers  ------------->>
@@ -292,15 +290,18 @@
 		      (format abl-mode-vem-activate-command new-vem-name)
 		      command)))
 	 (shell-name abl-mode-shell-name)
-	 (already-open-shell (get-buffer-window-list shell-name nil t))
+	 (open-shell-buffer (get-buffer shell-name))
+	 (open-shell-window (if open-shell-buffer
+				(get-buffer-window-list shell-name nil t)
+			      nil))
 	 (code-window (selected-window)))
 
-    (if (> (length already-open-shell) 0)
-	(select-window (car already-open-shell))
-      (shell shell-name))
-    (unless (member shell-name abl-mode-existing-shells)
-      (sleep-for 2)
-      (setf abl-mode-existing-shells (append abl-mode-existing-shells '(shell-name))))
+    (if open-shell-window
+	(select-window (car open-shell-window))
+      (if open-shell-buffer
+	  (set-buffer open-shell-buffer)
+	(shell shell-name)
+	(sleep-for 2)))
     (abl-mode-run-command (abl-mode-join-string commands " && "))
     (select-window code-window)))
 
