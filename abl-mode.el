@@ -299,7 +299,7 @@
     (if open-shell-window
 	(select-window (car open-shell-window))
       (if open-shell-buffer
-	  (set-buffer open-shell-buffer)
+	  (switch-to-buffer open-shell-buffer)
 	(shell shell-name)
 	(sleep-for 2)))
     (abl-mode-run-command (abl-mode-join-string commands " && "))
