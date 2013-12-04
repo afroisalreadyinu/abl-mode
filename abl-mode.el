@@ -215,6 +215,23 @@
 	((file-exists-p (abl-mode-concat-paths base-dir ".svn")) "svn")
 	(t nil)))
 
+(defun abl-mode-set-config (name value)
+  (setq (intern name) value))
+
+(defun parse-abl-options (file-path)
+  (let ((config-lines (with-temp-buffer
+			(insert-file-contents file-path)
+			(split-string (buffer-string) "\n" t))))
+    (loop for config-line in config-lines
+	  do (apply 'abl-mode-set-config (split-string config-line)))))
+
+
+(defun abl-mode-local-options (base-dir)
+  (let ((file-path (abl-mode-concat-paths base-dir ".abl")))
+    (if (file-exists-p file-path)
+	 (parse-abl-options file-path)
+      nil)))
+
 (defun abl-mode-get-git-branch-name (base-dir)
   (let* ((command (concat "cd " base-dir " && git branch"))
 	(git-output (shell-command-to-string command)))
@@ -509,11 +526,11 @@ followed by a proper class name).")
 
 ;; <<------------  TODOS -------------->>
 
+;; - per-project customization through a .abl file at the base of project
 ;; - C-c f looks for definition and not just import
 ;; - import something from one of the open files (or repeat existing import)
 ;; - run file as script if it has a name == main at the end
 ;; - bash script for going to base of project
 ;; - navigating to definitions of methods etc. should not be that difficult
-;; - per-project customization through a .abl file at the base of project
 
 ;;; abl-mode.el ends here
