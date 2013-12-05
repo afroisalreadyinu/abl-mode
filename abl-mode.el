@@ -49,7 +49,8 @@
 	  (setq abl-mode-vem-name (abl-mode-get-vem-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				abl-mode-project-name
-				abl-mode-branch))))))
+				abl-mode-branch))
+	  (abl-mode-local-options project-base)))))
 
 (defun abl-mode-hook ()
   (abl-mode))
@@ -65,7 +66,7 @@
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
     (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
     (define-key map (kbd "C-c w") 'abl-mode-display-branch)
-    (define-key map (kbd "C-c s") 'abl-mode-start-vem-python)
+    (define-key map (kbd "C-c s") 'abl-mode-start-python)
     map)
   "The keymap for abl-mode")
 
@@ -78,21 +79,27 @@
 
 (defcustom abl-mode-vem-activate-command "workon %s"
   "The command for activating a virtual environment")
+(make-variable-buffer-local 'abl-mode-vem-activate-command)
 
 (defcustom abl-mode-vem-create-command "mkvirtualenv %s"
   "The command for activating a virtual environment")
+(make-variable-buffer-local 'abl-mode-vem-create-command)
 
 (defcustom abl-mode-test-command "nosetests -s %s"
   "The command for running tests")
+(make-variable-buffer-local 'abl-mode-test-command)
 
 (defcustom abl-mode-branch-shell-prefix "ABL-SHELL:"
   "Prefix for the shell buffers opened")
+(make-variable-buffer-local 'abl-mode-branch-shell-prefix)
 
 (defcustom abl-mode-vems-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
+(make-variable-buffer-local 'abl-mode-vems-base-dir)
 
 (defcustom abl-mode-install-command "python setup.py develop"
   "The command to install a package.")
+(make-variable-buffer-local 'abl-mode-install-command)
 
 ;; <<----------------  Here ends the customization -------------->>
 
@@ -216,14 +223,17 @@
 	(t nil)))
 
 (defun abl-mode-set-config (name value)
-  (setq (intern name) value))
+  (set (intern name) value))
 
 (defun parse-abl-options (file-path)
   (let ((config-lines (with-temp-buffer
 			(insert-file-contents file-path)
 			(split-string (buffer-string) "\n" t))))
     (loop for config-line in config-lines
-	  do (apply 'abl-mode-set-config (split-string config-line)))))
+	  do (let* ((parts (split-string config-line))
+		 (command-part (car parts))
+		 (rest-part (abl-mode-join-string (cdr parts) " ")))
+	       (abl-mode-set-config command-part rest-part)))))
 
 
 (defun abl-mode-local-options (base-dir)
@@ -504,7 +514,7 @@ followed by a proper class name).")
   (interactive)
   (message (concat "Current branch: " abl-mode-branch)))
 
-(defun abl-mode-start-vem-python ()
+(defun abl-mode-start-python ()
   (interactive)
   (ansi-term
    (expand-file-name "python" (abl-mode-concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
