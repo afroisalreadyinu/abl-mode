@@ -96,30 +96,41 @@ Commands and their default key bindings
 Customization
 =============
 
-You can set any of the following options by including a line such as
-the following in your .emacs file::
+You can set any of the following options either by including a line
+such as the following in your .emacs file::
 
-   (setq option-name new-value)
+    (setq option-name new-value)
 
-String formatting is similar to the way it is done in Python; %s gets
-replaced by the relevant value when the option gets used.
+Or by listing project-local customization options in a file named
+`.abl` at the base level of a project, i.e. where the `.git` or `.svn`
+file is located. The customization line in such a file should start
+with the option name, followed by the value without any quotes, such
+as::
+
+    abl-mode-test-command ENV_VAR="env var value" pytest -x %s
+
+What comes after the name of the option will be concatenated into one
+command.  String formatting is similar to the way it is done in
+Python; %s gets replaced by the relevant value when the option gets
+used.
+
 
 +------------------------------------------+--------------------------------------+
-|nose-command                              |The command which is used to run unit |
+|abl-mode-test-command                     |The command which is used to run unit |
 |                                          |tests. Default: nose -s %s            |
 |                                          |                                      |
 |                                          |                                      |
 |                                          |                                      |
 +------------------------------------------+--------------------------------------+
-|vem-activate-command                      |The command used for activating a     |
+|abl-mode-vem-activate-command             |The command used for activating a     |
 |                                          |python virtual environment. Default:  |
 |                                          |vem_activate %s                       |
 +------------------------------------------+--------------------------------------+
-|vem-create-command                        |The command used for activating a     |
+|abl-mode-vem-create-command               |The command used for activating a     |
 |                                          |python virtual environment.  Default: |
 |                                          |vem create %s                         |
 +------------------------------------------+--------------------------------------+
-|vems-base-dir                             |The directory in which new virtual    |
+|abl-mode-vems-base-dir                    |The directory in which new virtual    |
 |                                          |environments are stored. This should  |
 |                                          |be the same directory in which the    |
 |                                          |above mentioned vem commands create   |
