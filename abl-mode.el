@@ -281,7 +281,8 @@
 	(prjct-name (or project abl-mode-project-name)))
     (or
      (cdr (assoc branch-name abl-mode-replacement-vems))
-     (concat prjct-name "_" branch-name))))
+     (concat prjct-name "_"
+	     (replace-regexp-in-string "/" "-" branch-name)))))
 
 ;;<< ---------------  Shell stuff  ----------------->>
 
