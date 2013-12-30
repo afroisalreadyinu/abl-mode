@@ -48,8 +48,8 @@
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
 	  (setq abl-mode-vem-name (abl-mode-get-vem-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
-				abl-mode-project-name
-				abl-mode-branch))
+				     abl-mode-project-name
+				     abl-mode-branch))
 	  (abl-mode-local-options project-base)))))
 
 (defun abl-mode-hook ()
