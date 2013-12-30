@@ -537,11 +537,12 @@ followed by a proper class name).")
 
 ;; <<------------  TODOS -------------->>
 
-;; - per-project customization through a .abl file at the base of project
+;; - running all tests in project? <- custom commands
+;; - add option to return to code window if test runs, is great success,
+;;   and window was swtiched from code window.
+;; - add a "tests: filename" header to code file, which gets run when C-c t is pressed.
 ;; - C-c f looks for definition and not just import
 ;; - import something from one of the open files (or repeat existing import)
-;; - run file as script if it has a name == main at the end
-;; - bash script for going to base of project
 ;; - navigating to definitions of methods etc. should not be that difficult
 
 ;;; abl-mode.el ends here
