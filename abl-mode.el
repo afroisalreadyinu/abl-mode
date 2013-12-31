@@ -212,7 +212,12 @@
 (defun abl-mode-starts-uppercase? (strng)
   (let ((y (substring strng 0 1))) (string= y (upcase y))))
 
-
+(defun chomp (str)
+  "Chomp leading and tailing whitespace from STR."
+  (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
+		       str)
+    (setq str (replace-match "" t t str)))
+  str)
 
 ;; ------------------------------------
 
