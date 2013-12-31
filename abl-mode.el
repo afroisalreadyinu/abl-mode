@@ -100,6 +100,15 @@
   "The command to install a package.")
 (make-variable-buffer-local 'abl-mode-install-command)
 
+(defcustom abl-mode-test-file-regexp ".*_tests.py"
+"regexp used to check whether a file is a test file")
+(make-variable-buffer-local 'abl-mode-test-file-regexp)
+
+(defcustom abl-mode-code-file-tests-regexps
+  '("^\"\"\"[^(\"\"\")]*\\(^tests:\\)" "^'''[^(''')]*\\(^tests:\\)")
+"list of regexps used to search for corresponding test files in a code file")
+(make-variable-buffer-local 'abl-mode-code-file-tests-regexps)
+
 ;; <<----------------  Here ends the customization -------------->>
 
 (defvar abl-mode-branch-base ""
@@ -183,6 +192,7 @@
   "Get the last path components, whether it's a file name or directory"
   (and (< 0 (length path))
        (car (last (split-string (abl-mode-remove-last-slash path) "/")))))
+
 
 (defun abl-mode-find-base-dir (&optional dir-path)
   (let* ((path (or dir-path (buffer-file-name))))
@@ -425,26 +435,53 @@ followed by a proper class name).")
       (abl-mode-exec-command shell-command)
       (setq abl-mode-last-test-run (cons test-path abl-mode-branch)))))
 
+(defun abl-mode-test-for-code-file ()
+  "Look for a 'tests: ' header in a python code file. This
+function is a bit convoluted because I prefer a longish function
+to a mind-bending regular expression. Especially in elisp."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((tests-list-start nil)
+	  (regexp-list abl-mode-code-file-tests-regexps))
+      (while (and regexp-list (not tests-list-start))
+	(message (concat "Trying " (car regexp-list)))
+	(setq tests-list-start (re-search-forward (car regexp-list) nil t))
+	(setq regexp-list (cdr regexp-list)))
+      (if (not tests-list-start)
+	  nil
+	(goto-char tests-list-start)
+	(chomp (buffer-substring tests-list-start (line-end-position)))))))
 
-;This returns the python destination on point, depending on
-;whether it is a test function, class, or whole file
+
 (defun abl-mode-get-test-entity ()
-  (let ((file-path (abl-mode-get-test-file-path)))
-    (if (= (line-number-at-pos) 1)
-	file-path
-      (let* ((test-func-pos
-	      (save-excursion
-		(re-search-backward "^ *def test*" nil t)))
-	     (test-class-pos
-	      (save-excursion
-		(re-search-backward "^class *" nil t))))
-	(cond
+  "Which tests should be run? If this is a test file, depending
+on where the cursor is, test whole file, class, or test
+method. Otherwise, look for a header with 'tests:' and run
+that. Error if none of these is the case."
+  (let* ((file-path (abl-mode-get-test-file-path))
+	 (is-test-file (eql (string-match abl-test-file-regexp
+					  (buffer-file-name)) 0)))
+    (if (not is-test-file)
+	(let ((test-file-paths (abl-mode-test-for-code-file)))
+	  (if test-file-paths
+	      (abl-mode-join-string test-file-paths " ")
+	    (error "You are not in a test file, and there are no tests in header.")))
+      (if (= (line-number-at-pos) 1)
+	  file-path
+	(let* ((test-func-pos
+		(save-excursion
+		  (re-search-backward "^ *def test*" nil t)))
+	       (test-class-pos
+		(save-excursion
+		  (re-search-backward "^class *" nil t))))
+	  (cond
 	 ((not (or test-func-pos test-class-pos))
 	  (error "You are neither in a test class nor a test function."))
 	 ((and test-func-pos
 	       (and test-class-pos (< test-class-pos test-func-pos)))
 	  (abl-mode-get-test-function-path file-path))
-	 (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name))))))))
+	 (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name)))))))))
+
 
 (defun abl-mode-run-test-at-point ()
   (interactive)
