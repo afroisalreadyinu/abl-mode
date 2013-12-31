@@ -457,7 +457,8 @@ to a mind-bending regular expression. Especially in elisp."
   "Which tests should be run? If this is a test file, depending
 on where the cursor is, test whole file, class, or test
 method. Otherwise, look for a header with 'tests:' and run
-that. Error if none of these is the case."
+that. In the last case, return whatever follows 'tests: '. Error
+if none of these is true."
   (let* ((file-path (abl-mode-get-test-file-path))
 	 (is-test-file (eql (string-match abl-test-file-regexp
 					  (buffer-file-name)) 0)))
@@ -576,7 +577,6 @@ that. Error if none of these is the case."
 ;; - running all tests in project? <- custom commands
 ;; - add option to return to code window if test runs, is great success,
 ;;   and window was swtiched from code window.
-;; - add a "tests: filename" header to code file, which gets run when C-c t is pressed.
 ;; - C-c f looks for definition and not just import
 ;; - import something from one of the open files (or repeat existing import)
 ;; - navigating to definitions of methods etc. should not be that difficult
