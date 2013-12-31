@@ -65,7 +65,6 @@
     (define-key map (kbd "C-c t") 'abl-mode-run-test-at-point)
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
     (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
-    (define-key map (kbd "C-c w") 'abl-mode-display-branch)
     (define-key map (kbd "C-c s") 'abl-mode-start-python)
     map)
   "The keymap for abl-mode")
@@ -509,11 +508,6 @@ followed by a proper class name).")
 	  (if class-name (search-forward (concat "class " class-name)))
 	  (if func-name (search-forward (concat "def " func-name))))))))
 
-
-(defun abl-mode-display-branch()
-  "Displays the name of the branch on which the current buffer is"
-  (interactive)
-  (message (concat "Current branch: " abl-mode-branch)))
 
 (defun abl-mode-start-python ()
   (interactive)
