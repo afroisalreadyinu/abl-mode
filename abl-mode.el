@@ -92,6 +92,10 @@
   "Prefix for the shell buffers opened")
 (make-variable-buffer-local 'abl-mode-branch-shell-prefix)
 
+(defcustom abl-mode-check-and-activate-ve t
+  "Check existence of virtualenv, and activate it when a command is run")
+(make-variable-buffer-local 'abl-mode-check-and-activate-ve)
+
 (defcustom abl-mode-ve-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
 (make-variable-buffer-local 'abl-mode-ve-base-dir)
