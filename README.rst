@@ -122,15 +122,15 @@ used.
 |                                          |                                      |
 |                                          |                                      |
 +------------------------------------------+--------------------------------------+
-|abl-mode-vem-activate-command             |The command used for activating a     |
+|abl-mode-ve-activate-command              |The command used for activating a     |
 |                                          |python virtual environment. Default:  |
-|                                          |vem_activate %s                       |
+|                                          |workon %s                             |
 +------------------------------------------+--------------------------------------+
-|abl-mode-vem-create-command               |The command used for activating a     |
+|abl-mode-ve-create-command                |The command used for activating a     |
 |                                          |python virtual environment.  Default: |
-|                                          |vem create %s                         |
+|                                          |mkvirtualenv create %s                |
 +------------------------------------------+--------------------------------------+
-|abl-mode-vems-base-dir                    |The directory in which new virtual    |
+|abl-mode-ve-base-dir                      |The directory in which new virtual    |
 |                                          |environments are stored. This should  |
 |                                          |be the same directory in which the    |
 |                                          |above mentioned vem commands create   |

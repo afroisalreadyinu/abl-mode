@@ -76,13 +76,13 @@
 
 ;; <<------------  Customization options  -------------->>
 
-(defcustom abl-mode-vem-activate-command "workon %s"
+(defcustom abl-mode-ve-activate-command "workon %s"
   "The command for activating a virtual environment")
-(make-variable-buffer-local 'abl-mode-vem-activate-command)
+(make-variable-buffer-local 'abl-mode-ve-activate-command)
 
-(defcustom abl-mode-vem-create-command "mkvirtualenv %s"
+(defcustom abl-mode-ve-create-command "mkvirtualenv %s"
   "The command for activating a virtual environment")
-(make-variable-buffer-local 'abl-mode-vem-create-command)
+(make-variable-buffer-local 'abl-mode-ve-create-command)
 
 (defcustom abl-mode-test-command "nosetests -s %s"
   "The command for running tests")
@@ -92,9 +92,9 @@
   "Prefix for the shell buffers opened")
 (make-variable-buffer-local 'abl-mode-branch-shell-prefix)
 
-(defcustom abl-mode-vems-base-dir "~/.virtualenvs"
+(defcustom abl-mode-ve-base-dir "~/.virtualenvs"
   "base directory for virtual environments")
-(make-variable-buffer-local 'abl-mode-vems-base-dir)
+(make-variable-buffer-local 'abl-mode-ve-base-dir)
 
 (defcustom abl-mode-install-command "python setup.py develop"
   "The command to install a package.")
@@ -323,13 +323,13 @@
 	 (new-vem-name (car new-or-name))
 	 (commands (if create-vem (list
 				   (concat "cd " abl-mode-branch-base)
-				   (format abl-mode-vem-create-command new-vem-name)
-				   (format abl-mode-vem-activate-command new-vem-name)
+				   (format abl-mode-ve-create-command new-vem-name)
+				   (format abl-mode-ve-activate-command new-vem-name)
 				   abl-mode-install-command
 				   command)
 		     (list
 		      (concat "cd " abl-mode-branch-base)
-		      (format abl-mode-vem-activate-command new-vem-name)
+		      (format abl-mode-ve-activate-command new-vem-name)
 		      command)))
 	 (shell-name abl-mode-shell-name)
 	 (open-shell-buffer (get-buffer shell-name))
@@ -358,7 +358,7 @@
   (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
     (if replacement-vem
 	(cons replacement-vem nil)
-      (let ((vem-path (expand-file-name name abl-mode-vems-base-dir)))
+      (let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
 	(if (file-exists-p vem-path)
 	    (cons name nil)
 	  (let*
@@ -555,7 +555,7 @@ if none of these is true."
 (defun abl-mode-start-python ()
   (interactive)
   (ansi-term
-   (expand-file-name "python" (abl-mode-concat-paths abl-mode-vems-base-dir  abl-mode-vem-name "bin"))
+   (expand-file-name "python" (abl-mode-concat-paths abl-mode-ve-base-dir  abl-mode-vem-name "bin"))
    (concat "Python " abl-mode-vem-name)))
 
 ;; Sample custom command
