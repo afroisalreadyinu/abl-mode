@@ -451,7 +451,6 @@ to a mind-bending regular expression. Especially in elisp."
     (let ((tests-list-start nil)
 	  (regexp-list abl-mode-code-file-tests-regexps))
       (while (and regexp-list (not tests-list-start))
-	(message (concat "Trying " (car regexp-list)))
 	(setq tests-list-start (re-search-forward (car regexp-list) nil t))
 	(setq regexp-list (cdr regexp-list)))
       (if (not tests-list-start)
