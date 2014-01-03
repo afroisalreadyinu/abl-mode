@@ -320,8 +320,6 @@
       (let* ((shell-process-id (process-id (get-buffer-process abl-shell-buffer)))
 	     (command (format abl-mode-shell-child-cmd shell-process-id))
 	     (output (shell-command-to-string command)))
-	(message (concat "COMMAND: " command))
-	(message (concat "OUT: " output))
 	(/= (string-to-number output) 0)))))
 
 
