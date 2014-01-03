@@ -326,58 +326,55 @@ running using ps."
 
 
 (defun abl-mode-exec-command (command)
-  "This function should be used from inside a non-shell buffer"
-  (let* ((new-or-name (abl-mode-vem-name-or-create abl-mode-vem-name))
-	 (create-vem (cdr new-or-name))
-	 (new-vem-name (car new-or-name))
-	 (commands (if create-vem (list
-				   (concat "cd " abl-mode-branch-base)
-				   (format abl-mode-ve-create-command new-vem-name)
-				   (format abl-mode-ve-activate-command new-vem-name)
-				   abl-mode-install-command
-				   command)
-		     (list
-		      (concat "cd " abl-mode-branch-base)
-		      (format abl-mode-ve-activate-command new-vem-name)
-		      command)))
+  (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
+	 (ve-name (first new-or-name))
+	 (create-vem (second new-or-name))
+	 (commands
+	  (cond (create-vem (list (concat "cd " abl-mode-branch-base)
+				  (format abl-mode-ve-create-command ve-name)
+				  (format abl-mode-ve-activate-command ve-name)
+				  abl-mode-install-command
+				  command))
+		((not ve-name) (list (concat "cd " abl-mode-branch-base)
+					  command))
+		(t (list (concat "cd " abl-mode-branch-base)
+			 (format abl-mode-ve-activate-command ve-name)
+			 command))))
 	 (shell-name abl-mode-shell-name)
 	 (open-shell-buffer (get-buffer shell-name))
 	 (open-shell-window (if open-shell-buffer
 				(get-buffer-window-list shell-name nil t)
 			      nil))
 	 (code-window (selected-window)))
-
     (if open-shell-window
 	(select-window (car open-shell-window))
       (if open-shell-buffer
 	  (switch-to-buffer open-shell-buffer)
 	(shell shell-name)
 	(sleep-for 2)))
-    (abl-mode-run-command (abl-mode-join-string commands " && "))
+    (goto-char (point-max))
+    (insert (abl-mode-join-string commands " && "))
+    (comint-send-input)
     (select-window code-window)))
 
 
-(defun abl-mode-run-command (command)
-  "This function should be used when inside a shell"
-  (goto-char (point-max))
-  (insert command)
-  (comint-send-input))
-
-(defun abl-mode-vem-name-or-create (name)
-  (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
-    (if replacement-vem
-	(cons replacement-vem nil)
-      (let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
-	(if (file-exists-p vem-path)
-	    (cons name nil)
-	  (let*
-	      ((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
-				       name))
-	       (vem-or-y (read-from-minibuffer command-string))
-	       (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	    (if create-new
-		(cons name create-new)
-	      (abl-mode-vem-name-or-create vem-or-y))))))))
+(defun abl-mode-ve-name-or-create (name)
+  (if (not abl-mode-check-and-activate-ve)
+      (cons nil nil)
+    (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
+      (if replacement-vem
+	  (cons replacement-vem nil)
+	(let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
+	  (if (file-exists-p vem-path)
+	      (cons name nil)
+	    (let*
+		((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
+					 name))
+		 (vem-or-y (read-from-minibuffer command-string))
+		 (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	      (if create-new
+		  (cons name create-new)
+		(abl-mode-ve-name-or-create vem-or-y)))))))))
 
 ;; <<------------  Running the server and tests  -------->>
 
