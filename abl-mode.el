@@ -46,7 +46,7 @@
 	  (setq abl-mode-branch-base project-base)
 	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
-	  (setq abl-mode-vem-name (abl-mode-get-vem-name))
+	  (setq abl-mode-ve-name (abl-mode-get-vem-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				     abl-mode-project-name
 				     abl-mode-branch))
@@ -119,9 +119,9 @@
   "Base directory of the current branch")
 (make-variable-buffer-local 'abl-mode-branch-base)
 
-(defvar abl-mode-vem-name ""
+(defvar abl-mode-ve-name ""
   "Name of the virtual env")
-(make-variable-buffer-local 'abl-mode-vem-name)
+(make-variable-buffer-local 'abl-mode-ve-name)
 
 (defvar abl-mode-etags-command-base "find %s -name '*.py' -print | etags - -o %s/TAGS"
   "command run to create a tags file for emacs")
