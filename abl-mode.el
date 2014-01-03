@@ -562,8 +562,12 @@ if none of these is true."
 (defun abl-mode-start-python ()
   (interactive)
   (ansi-term
-   (expand-file-name "python" (abl-mode-concat-paths abl-mode-ve-base-dir  abl-mode-vem-name "bin"))
-   (concat "Python " abl-mode-vem-name)))
+   (expand-file-name "python"
+		     (abl-mode-concat-paths
+		      abl-mode-ve-base-dir
+		      abl-mode-ve-name
+		      "bin"))
+   (concat "Python " abl-mode-ve-name)))
 
 ;; Sample custom command
 
