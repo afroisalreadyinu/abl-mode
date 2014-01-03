@@ -246,7 +246,7 @@
 	(t nil)))
 
 (defun abl-mode-set-config (name value)
-  (set (intern name) value))
+  (set (intern name) (eval (read value))))
 
 (defun parse-abl-options (file-path)
   (let ((config-lines (with-temp-buffer
@@ -254,8 +254,8 @@
 			(split-string (buffer-string) "\n" t))))
     (loop for config-line in config-lines
 	  do (let* ((parts (split-string config-line))
-		 (command-part (car parts))
-		 (rest-part (abl-mode-join-string (cdr parts) " ")))
+		    (command-part (car parts))
+		    (rest-part (abl-mode-join-string (cdr parts) " ")))
 	       (abl-mode-set-config command-part rest-part)))))
 
 
