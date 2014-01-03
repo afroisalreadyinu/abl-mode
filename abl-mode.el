@@ -144,6 +144,11 @@
 
 (defvar abl-mode-replacement-vems '())
 
+
+(defvar abl-mode-shell-child-cmd
+  (if (eq system-type 'darwin)
+      "ps -j | grep %d | grep -v grep | grep -v \"/bin/bash\" | wc -l"
+    "ps --ppid %d  h | wc -l"))
 ;; <<------------- Helpers  ------------->>
 
 (defun abl-mode-starts-with (str1 str2)
@@ -307,18 +312,18 @@
 (defun abl-mode-shell-name-for-branch (project-name branch-name)
   (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
 
-(defun abl-mode-shell-busy (&optional shell-buffer)
-  (let* ((real-buffer (or shell-buffer (current-buffer)))
-	 (shell-process-id (process-id (get-buffer-process real-buffer)))
-	 (command (format "ps --ppid %d  h | wc -l" shell-process-id))
-	 (output (shell-command-to-string command)))
-    (/= (string-to-number output) 0)))
 
 (defun abl-shell-busy ()
   (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
     (if (not abl-shell-buffer)
 	nil
-      (abl-mode-shell-busy abl-shell-buffer))))
+      (let* ((shell-process-id (process-id (get-buffer-process abl-shell-buffer)))
+	     (command (format abl-mode-shell-child-cmd shell-process-id))
+	     (output (shell-command-to-string command)))
+	(message (concat "COMMAND: " command))
+	(message (concat "OUT: " output))
+	(/= (string-to-number output) 0)))))
+
 
 (defun abl-mode-exec-command (command)
   "This function should be used from inside a non-shell buffer"
