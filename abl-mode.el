@@ -314,6 +314,8 @@
 
 
 (defun abl-shell-busy ()
+  "Find out whether the shell has any child processes
+running using ps."
   (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
     (if (not abl-shell-buffer)
 	nil
