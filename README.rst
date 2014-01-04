@@ -65,6 +65,25 @@ Commands and their default key bindings
 +----------+-------------------------------------------+
 
 =============
+Running Tests
+=============
+
+Here is how the tests to run are determined:
+
+If the name of the file does not match ``abl-mode-test-file-regexp``,
+it is assumed that this is not a test file, but a code file. In that
+case, the beginning of the file is searched (using the regular
+expressions in ``abl-mode-code-file-tests-regexps``) for a line that
+lists the tests for that file. The format for this line is ``tests:
+wherever/the_tests_are.py``. If no such header is found, an error is
+shown.
+
+If the file is a test file, which test is run depends on the location
+of the cursor. If it is at the start of the file, the whole file is
+run. If it is in an individual test, that test is run. If it is in a
+test class but not in a test, that test class is run.
+
+=============
 Customization
 =============
 
