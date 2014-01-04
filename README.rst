@@ -28,8 +28,8 @@ following in your emacs configuration file::
 
    (require 'abl)
 
-If you want to activate abl-mode automatically, add the following to
-your configuration::
+If you want to activate abl-mode automatically for python files, add
+the following to your Emacs configuration::
 
    (add-hook 'find-file-hooks 'abl-mode-hook)
 
@@ -40,57 +40,29 @@ activate abl-mode only for python files.
 Commands and their default key bindings
 =======================================
 
-+----------+-------------------------------------+
-|M-x       |Toggle abl-mode                      |
-|abl-mode  |                                     |
-+----------+-------------------------------------+
-|C-c w     |Which branch am I on?  (If           |
-|          |you're in a git repository, the      |
-|          |outcome of the 'git branch'          |
-|          |command; if you're in a              |
-|          |subversion repository, the name      |
-|          |of the directory)                    |
-|          |                                     |
-|          |                                     |
-|          |                                     |
-|          |                                     |
-|          |                                     |
-|          |                                     |
-+----------+-------------------------------------+
-|C-c t     |Run test at point (function if       |
-|          |cursor is inside a function,         |
-|          |class if cursor is inside a          |
-|          |class but not in a function,         |
-|          |file if cursor is at the first       |
-|          |line of a file)                      |
-|          |                                     |
-|          |                                     |
-+----------+-------------------------------------+
-|C-c u     |Rerun last test entity               |
-|          |(whatever was run the last time      |
-|          |with C-c t)                          |
-+----------+-------------------------------------+
-|C-c r     |Run the web server for the           |
-|          |branch you're on (or whatever        |
-|          |else you have customized it to       |
-|          |be)                                  |
-+----------+-------------------------------------+
-|C-c s     |Run the python shell for the         |
-|          |virtualenv of this branch            |
-|          |                                     |
-+----------+-------------------------------------+
-|C-c o     |Open the python entity at point. The |
-|          |python entity must be in the format  |
-|          |package.name:ClassName.function_name.|
-|          |                                     |
-|          |                                     |
-+----------+-------------------------------------+
-|C-c a     |Reload all buffers that have no      |
-|          |unsaved changes (useful if you       |
-|          |switch branches on git;              |
-|          |notifies you in case there were      |
-|          |buffers with unsaved changes)        |
-+----------+-------------------------------------+
++----------+-------------------------------------------+
+|M-x       |Toggle abl-mode                            |
+|abl-mode  |                                           |
++----------+-------------------------------------------+
+|C-c t     |Run test at point. See below for detailed  |
+|          |explanation.                               |
+|          |                                           |
+|          |                                           |
++----------+-------------------------------------------+
+|C-c u     |Rerun last test entity (whatever was run   |
+|          |the last time with C-c t)                  |
+|          |                                           |
++----------+-------------------------------------------+
+|C-c s     |Run the python shell for the virtualenv of |
+|          |this branch                                |
+|          |                                           |
++----------+-------------------------------------------+
+|C-c o     |Open the python entity at point. The python|
+|          |entity must be in the format               |
+|          |``package.name:ClassName.function_name``.  |
+|          |                                           |
+|          |                                           |
++----------+-------------------------------------------+
 
 =============
 Customization
@@ -102,17 +74,17 @@ such as the following in your .emacs file::
     (setq option-name new-value)
 
 Or by listing project-local customization options in a file named
-`.abl` at the base level of a project, i.e. where the `.git` or `.svn`
-file is located. The customization line in such a file should start
-with the option name, followed by the value without any quotes, such
-as::
+`.abl` at the base level of a project, i.e. where the `setup.py` file
+is located. The customization line in such a file should start with
+the option name, followed by the value, such as::
 
-    abl-mode-test-command ENV_VAR="env var value" pytest -x %s
+    abl-mode-test-command "ENV_VAR=\"env var value\"" pytest -x %s"
 
-What comes after the name of the option will be concatenated into one
-command.  String formatting is similar to the way it is done in
-Python; %s gets replaced by the relevant value when the option gets
-used.
+As you can see here, the value should be as you would include it in
+your configuration; it is read and evaluated, so that logical values
+such as nil or t can also be used. String formatting is similar to the
+way it is done in Python; %s gets replaced by the relevant value when
+the option gets used.
 
 
 +------------------------------------------+--------------------------------------+
