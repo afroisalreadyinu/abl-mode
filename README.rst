@@ -106,33 +106,53 @@ way it is done in Python; %s gets replaced by the relevant value when
 the option gets used.
 
 
-+------------------------------------------+--------------------------------------+
-|abl-mode-test-command                     |The command which is used to run unit |
-|                                          |tests. Default: nose -s %s            |
-|                                          |                                      |
-|                                          |                                      |
-|                                          |                                      |
-+------------------------------------------+--------------------------------------+
-|abl-mode-ve-activate-command              |The command used for activating a     |
-|                                          |python virtual environment. Default:  |
-|                                          |workon %s                             |
-+------------------------------------------+--------------------------------------+
-|abl-mode-ve-create-command                |The command used for activating a     |
-|                                          |python virtual environment.  Default: |
-|                                          |mkvirtualenv create %s                |
-+------------------------------------------+--------------------------------------+
-|abl-mode-ve-base-dir                      |The directory in which new virtual    |
-|                                          |environments are stored. This should  |
-|                                          |be the same directory in which the    |
-|                                          |above mentioned vem commands create   |
-|                                          |the environments. Default:            |
-|                                          |~/.virtualenvs                        |
-+------------------------------------------+--------------------------------------+
-|abl-mode-install-command                  |The command used to install a         |
-|                                          |development package. Default is       |
-|                                          |"python setup.py develop".            |
-+------------------------------------------+--------------------------------------+
-|branch-shell-prefix                       |The string appended to the name of the|
-|                                          |shell buffer created to run tests or  |
-|                                          |wsgi server. Default: ABL-SHELL:      |
-+------------------------------------------+--------------------------------------+
++-------------------------------------+------------------------------------------+
+|abl-mode-check-and-activate-ve       |Whether a the existence of a suitable     |
+|                                     |virtual environment should be checked, and|
+|                                     |the virtualenv activation command should  |
+|                                     |be included with each command             |
+|                                     |run. Default: t                           |
++-------------------------------------+------------------------------------------+
+|abl-mode-ve-activate-command         |The command used for activating a python  |
+|                                     |virtual environment. Default: workon %s   |
+|                                     |                                          |
+|                                     |                                          |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-ve-create-command           |The command used for activating a python  |
+|                                     |virtual environment.  Default:            |
+|                                     |mkvirtualenv create %s                    |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-test-command                |The command used to run unit tests.       |
+|                                     |Default: nose -s %s                       |
+|                                     |                                          |
+|                                     |                                          |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-ve-base-dir                 |The directory in which new virtual        |
+|                                     |environments are stored. This should be   |
+|                                     |the same directory in which the above     |
+|                                     |mentioned virtualenv commands create the  |
+|                                     |environments. Default: ~/.virtualenvs     |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-install-command             |The command used to install a development |
+|                                     |package. This command is run to install   |
+|                                     |dependencies when a virtualenv is created.|
+|                                     |Default is "python setup.py develop".     |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-test-file-regexp            |Regular expression used to determine      |
+|                                     |whether a file contains tests.  Default:  |
+|                                     |".*_tests.py"                             |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-code-file-tests-regexps     |List of regular expressions used to search|
+|                                     |for a test files list in a code file.     |
+|                                     |                                          |
++-------------------------------------+------------------------------------------+
+|abl-mode-branch-shell-prefix         |The string appended to the name of the    |
+|                                     |shell buffer created to run tests or wsgi |
+|                                     |server. Default: ``ABL-SHELL:``           |
++-------------------------------------+------------------------------------------+
