@@ -327,8 +327,8 @@ running using ps."
 
 (defun abl-mode-exec-command (command)
   (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
-	 (ve-name (first new-or-name))
-	 (create-vem (second new-or-name))
+	 (ve-name (car new-or-name))
+	 (create-vem (cdr new-or-name))
 	 (commands
 	  (cond (create-vem (list (concat "cd " abl-mode-branch-base)
 				  (format abl-mode-ve-create-command ve-name)
