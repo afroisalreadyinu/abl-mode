@@ -368,8 +368,10 @@ running using ps."
 	  (if (file-exists-p vem-path)
 	      (cons name nil)
 	    (let*
-		((command-string (format "No vem %s; y to create it, or name of existing to use instead: "
-					 name))
+		((command-string
+		  (format
+		   "No virtualenv %s; y to create it, or name of existing to use instead: "
+		   name))
 		 (vem-or-y (read-from-minibuffer command-string))
 		 (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
 	      (if create-new
