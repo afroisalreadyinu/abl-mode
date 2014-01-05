@@ -241,8 +241,8 @@
 ;; ------------------------------------
 
 (defun abl-mode-git-or-svn (base-dir)
-  (cond ((file-exists-p (abl-mode-concat-paths base-dir ".git")) "git")
-	((file-exists-p (abl-mode-concat-paths base-dir ".svn")) "svn")
+  (cond ((locate-dominating-file (abl-mode-concat-paths base-dir) ".git") "git")
+	((locate-dominating-file (abl-mode-concat-paths base-dir) ".svn") "svn")
 	(t nil)))
 
 (defun abl-mode-set-config (name value)
