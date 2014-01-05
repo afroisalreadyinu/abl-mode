@@ -465,7 +465,7 @@ method. Otherwise, look for a header with 'tests:' and run
 that. In the last case, return whatever follows 'tests: '. Error
 if none of these is true."
   (let* ((file-path (abl-mode-get-test-file-path))
-	 (is-test-file (eql (string-match abl-test-file-regexp
+	 (is-test-file (eql (string-match abl-mode-test-file-regexp
 					  (buffer-file-name)) 0)))
     (if (not is-test-file)
 	(let ((test-file-paths (abl-mode-test-for-code-file)))
