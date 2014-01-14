@@ -588,10 +588,9 @@ if none of these is true."
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
 ;;      - add command to insert an import
+;; - go to a/next test that failed
 ;; - C-c f looks for definition and not just import
 ;; - navigating to definitions of methods etc. should not be that difficult
-;; - add option to return to code window if test runs, is great success,
-;;   and window was swtiched from code window.
 ;; - maybe: parsing output? listing failed tests?
 
 ;;; abl-mode.el ends here
