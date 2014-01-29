@@ -557,6 +557,23 @@ if none of these is true."
 		      "bin"))
    (concat "Python " abl-mode-ve-name)))
 
+(defun abl-mode-open-lib (module)
+  "Open the base file for the library name given. TODO: use
+thing-at-point to pick a default value
+http://stackoverflow.com/questions/9646088/emacs-interactive-commands-with-default-value"
+  (interactive "sModule: ")
+  (let* ((ve-activate-path (expand-file-name (format "%s/bin/activate" abl-mode-ve-name)
+					    abl-mode-ve-base-dir))
+	 (command
+	  (format "source %s && python -c \"import %s; print %s.__file__\""
+		  ve-activate-path
+		  module module))
+	 (possible-path (chomp (shell-command-to-string command)))
+	 (file-path (if (abl-mode-ends-with possible-path "c")
+			(substring possible-path 0 (- (length possible-path) 1))
+		      possible-path)))
+    (find-file file-path)))
+
 ;; Sample custom command
 
 (defun run-current-branch ()
@@ -573,7 +590,6 @@ if none of these is true."
 
 ;; <<------------  TODOS -------------->>
 
-;; - open file of module, esp. library
 ;; - rerun last failed
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
@@ -582,5 +598,7 @@ if none of these is true."
 ;; - C-c f looks for definition and not just import
 ;; - navigating to definitions of methods etc. should not be that difficult
 ;; - maybe: parsing output? listing failed tests?
+;; - make abl-mode-open-lib have a default arg
+;; - change abl-mode init to work also with files not inside the git dir (opened modules)
 
 ;;; abl-mode.el ends here
