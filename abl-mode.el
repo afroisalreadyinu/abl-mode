@@ -149,6 +149,9 @@
   (if (eq system-type 'darwin)
       "ps -j | grep %d | grep -v grep | grep -v \"/bin/bash\" | wc -l"
     "ps --ppid %d  h | wc -l"))
+
+(defvar abl-mode-identifier-re "[^a-zA-Z0-9_\.]")
+
 ;; <<------------- Helpers  ------------->>
 
 (defun abl-mode-starts-with (str1 str2)
@@ -564,10 +567,10 @@ with a letter or an underscore but not a digit. Since the regexp
 for this was beyond my capabilities, this method does not deal
 with incorrect python."
   (save-excursion
-    (re-search-backward "[^a-zA-Z0-9_\.]" nil t)
+    (re-search-backward abl-mode-identifier-re nil t)
     (forward-char)
     (let ((start (point))
-	  (end (- (re-search-forward "[^a-zA-Z_\.]" nil t) 1)))
+	  (end (- (re-search-forward abl-mode-identifier-re nil t) 1)))
       (buffer-substring-no-properties start end))))
 
 
@@ -577,6 +580,8 @@ import module and print its __file__ attribute."
   (interactive (list (read-string (format "Module (default: %s): "
 					  (abl-mode-python-thing-at-point))
 				  nil nil (abl-mode-python-thing-at-point))))
+  (if (string-match abl-mode-identifier-re module)
+      (error (format "%s is not a valid module name" module)))
   (let* ((ve-activate-path (expand-file-name (format "%s/bin/activate" abl-mode-ve-name)
   					    abl-mode-ve-base-dir))
   	 (command
@@ -584,9 +589,9 @@ import module and print its __file__ attribute."
   		  ve-activate-path
   		  module module))
   	 (possible-path (chomp (shell-command-to-string command)))
-  	 (file-path (if (abl-mode-ends-with possible-path "c")
+	 (file-path (if (abl-mode-ends-with possible-path "c")
   			(substring possible-path 0 (- (length possible-path) 1))
-  		      possible-path)))
+		      possible-path)))
     (find-file file-path)))
 
 ;; Sample custom command
