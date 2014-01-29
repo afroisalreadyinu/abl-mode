@@ -557,21 +557,36 @@ if none of these is true."
 		      "bin"))
    (concat "Python " abl-mode-ve-name)))
 
+
+(defun abl-mode-python-thing-at-point ()
+  "Find the identifier the cursor is on. Identifier can start
+with a letter or an underscore but not a digit. Since the regexp
+for this was beyond my capabilities, this method does not deal
+with incorrect python."
+  (save-excursion
+    (re-search-backward "[^a-zA-Z0-9_\.]" nil t)
+    (forward-char)
+    (let ((start (point))
+	  (end (- (re-search-forward "[^a-zA-Z_\.]" nil t) 1)))
+      (buffer-substring-no-properties start end))))
+
+
 (defun abl-mode-open-lib (module)
-  "Open the base file for the library name given. TODO: use
-thing-at-point to pick a default value
-http://stackoverflow.com/questions/9646088/emacs-interactive-commands-with-default-value"
-  (interactive "sModule: ")
+  "Open the base file for the library name given. Uses python to
+import module and print its __file__ attribute."
+  (interactive (list (read-string (format "Module (default: %s): "
+					  (abl-mode-python-thing-at-point))
+				  nil nil (abl-mode-python-thing-at-point))))
   (let* ((ve-activate-path (expand-file-name (format "%s/bin/activate" abl-mode-ve-name)
-					    abl-mode-ve-base-dir))
-	 (command
-	  (format "source %s && python -c \"import %s; print %s.__file__\""
-		  ve-activate-path
-		  module module))
-	 (possible-path (chomp (shell-command-to-string command)))
-	 (file-path (if (abl-mode-ends-with possible-path "c")
-			(substring possible-path 0 (- (length possible-path) 1))
-		      possible-path)))
+  					    abl-mode-ve-base-dir))
+  	 (command
+  	  (format "source %s && python -c \"import %s; print %s.__file__\""
+  		  ve-activate-path
+  		  module module))
+  	 (possible-path (chomp (shell-command-to-string command)))
+  	 (file-path (if (abl-mode-ends-with possible-path "c")
+  			(substring possible-path 0 (- (length possible-path) 1))
+  		      possible-path)))
     (find-file file-path)))
 
 ;; Sample custom command
