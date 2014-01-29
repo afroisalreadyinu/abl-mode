@@ -157,9 +157,11 @@
 		(substring str1 0 (length str2)))))
 
 (defun abl-mode-ends-with (str1 str2)
-  (let ((str1-length (length str1)))
-    (and (> str1-length 0)
-	 (string= (substring str1 (- str1-length (length str2)) str1-length) str2))))
+  "Does str1 end with str2?"
+  (and (> (length str1) 0)
+       (>= (length str1) (length str2))
+       (string= (substring str1 (- (length str1) (length str2)) (length str1))
+		str2)))
 
 (defun abl-mode-remove-last (lst)
   (if (not (cdr lst))
