@@ -236,6 +236,14 @@
 (defun abl-mode-starts-uppercase? (strng)
   (let ((y (substring strng 0 1))) (string= y (upcase y))))
 
+
+(defun abl-mode-drop-last-if (str to-be-dropped)
+  "If str ends with to-be-dropped, drop it and return. Otherwise
+return str"
+  (if (abl-mode-ends-with str to-be-dropped)
+      (substring str 0 (- (length str) (length to-be-dropped)))
+    str))
+
 (defun chomp (str)
   "Chomp leading and tailing whitespace from STR."
   (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
@@ -560,7 +568,6 @@ if none of these is true."
 		      "bin"))
    (concat "Python " abl-mode-ve-name)))
 
-
 (defun abl-mode-python-thing-at-point ()
   "Find the identifier the cursor is on. Identifier can start
 with a letter or an underscore but not a digit. Since the regexp
@@ -569,9 +576,10 @@ with incorrect python."
   (save-excursion
     (re-search-backward abl-mode-identifier-re nil t)
     (forward-char)
-    (let ((start (point))
-	  (end (- (re-search-forward abl-mode-identifier-re nil t) 1)))
-      (buffer-substring-no-properties start end))))
+    (let* ((start (point))
+	   (end (- (re-search-forward abl-mode-identifier-re nil t) 1)))
+      ;; in case it was a * import, might end with .
+      (abl-mode-drop-last-if (buffer-substring-no-properties start end) "."))))
 
 
 (defun abl-mode-open-lib (module)
@@ -588,11 +596,12 @@ import module and print its __file__ attribute."
   	  (format "source %s && python -c \"import %s; print %s.__file__\""
   		  ve-activate-path
   		  module module))
-  	 (possible-path (chomp (shell-command-to-string command)))
-	 (file-path (if (abl-mode-ends-with possible-path "c")
-  			(substring possible-path 0 (- (length possible-path) 1))
-		      possible-path)))
-    (find-file file-path)))
+  	 (possible-path (chomp (shell-command-to-string command))))
+    (if (string-match "ImportError: No module named" possible-path)
+	(error (format "Module %s causes ImportError" module)))
+    (if (string-match "SyntaxError:" possible-path)
+	(error (format "Importing module %s caused SyntaxError" module)))
+    (find-file (abl-mode-drop-last-if possible-path "c"))))
 
 ;; Sample custom command
 
