@@ -65,6 +65,7 @@
     (define-key map (kbd "C-c t") 'abl-mode-run-test-at-point)
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
     (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
+    (define-key map (kbd "C-c m") 'abl-mode-open-module)
     (define-key map (kbd "C-c s") 'abl-mode-start-python)
     map)
   "The keymap for abl-mode")
@@ -582,7 +583,7 @@ with incorrect python."
       (abl-mode-drop-last-if (buffer-substring-no-properties start end) "."))))
 
 
-(defun abl-mode-open-lib (module)
+(defun abl-mode-open-module (module)
   "Open the base file for the library name given. Uses python to
 import module and print its __file__ attribute."
   (interactive (list (read-string (format "Module (default: %s): "
@@ -619,15 +620,13 @@ import module and print its __file__ attribute."
 
 ;; <<------------  TODOS -------------->>
 
+;; - parse output, list failed tests
+;; - go to a/next test that failed
 ;; - rerun last failed
+;; - what's the deal with abl-mode-open-python-path-at-point?
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
 ;;      - add command to insert an import
-;; - go to a/next test that failed
-;; - C-c f looks for definition and not just import
-;; - navigating to definitions of methods etc. should not be that difficult
-;; - maybe: parsing output? listing failed tests?
-;; - make abl-mode-open-lib have a default arg
 ;; - change abl-mode init to work also with files not inside the git dir (opened modules)
 
 ;;; abl-mode.el ends here
