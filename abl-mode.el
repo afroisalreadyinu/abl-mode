@@ -267,7 +267,7 @@
 
 (defun abl-mode-get-git-branch-name (base-dir)
   (let* ((command (concat "cd " base-dir " && git branch"))
-	(git-output (shell-command-to-string command)))
+	 (git-output (shell-command-to-string command)))
     (if (string-equal git-output "")
 	(progn
 	  (message "Looks like your git repository is empty (the output of git branch was empty). Calling it 'none'.")
@@ -502,20 +502,6 @@ if none of these is true."
       (message "You haven't run any tests yet.")
     (abl-mode-run-test (car abl-mode-last-test-run) (cdr abl-mode-last-test-run))))
 
-;the command: "find . -name *.py -print | etags -"
-(defun abl-mode-create-etags-file ()
-  (interactive)
-  (let ((tag-file-path (abl-mode-concat-paths abl-mode-branch-base "TAGS")))
-    (if (or (not (file-exists-p tag-file-path))
-	    (if (y-or-n-p "Tags file alread exists, recreate?")
-		(progn
-		  (delete-file tag-file-path)
-		  t)))
-	(let ((etags-command (format abl-mode-etags-command-base
-				     abl-mode-branch-base
-				     abl-mode-branch-base)))
-	  (shell-command-to-string etags-command)))))
-
 
 (defun abl-mode-parse-python-path (python-path)
   (let* ((colon-index (string-match ":" python-path))
@@ -585,6 +571,8 @@ if none of these is true."
 
 ;; <<------------  TODOS -------------->>
 
+;; - open file of module, esp. library
+;; - rerun last failed
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
 ;;      - add command to insert an import
