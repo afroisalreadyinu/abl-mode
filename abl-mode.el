@@ -114,6 +114,11 @@
 "list of regexps used to search for corresponding test files in a code file")
 (make-variable-buffer-local 'abl-mode-code-file-tests-regexps)
 
+(defcustom abl-mode-end-testrun-re
+  "^OK$\\|^FAILED (failures=[0-9]*)$"
+"Regexp to find out whether the test run has finished.")
+(make-variable-buffer-local 'abl-mode-end-testrun-re)
+
 ;; <<----------------  Here ends the customization -------------->>
 
 (defvar abl-mode-branch-base ""
@@ -145,6 +150,7 @@
 
 (defvar abl-mode-replacement-vems '())
 
+(defvar abl-mode-last-shell-points (make-hash-table :test 'equal))
 
 (defvar abl-mode-shell-child-cmd
   (if (eq system-type 'darwin)
@@ -365,8 +371,15 @@ running using ps."
       (if open-shell-buffer
 	  (switch-to-buffer open-shell-buffer)
 	(shell shell-name)
+	(add-to-list 'comint-output-filter-functions
+		     (lambda (line)
+		       (if (string-match abl-mode-end-testrun-re line)
+			     (message (buffer-substring-no-properties
+				       (gethash (buffer-name) abl-mode-last-shell-points)
+				       (point))))))
 	(sleep-for 2)))
     (goto-char (point-max))
+    (puthash shell-name (point) abl-mode-last-shell-points)
     (insert (abl-mode-join-string commands " && "))
     (comint-send-input)
     (select-window code-window)))
@@ -625,9 +638,11 @@ import module and print its __file__ attribute."
 ;; - parse output, list failed tests
 ;; - go to a/next test that failed
 ;; - rerun last failed
+;; - turn replacement vems into hash table
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
 ;;      - add command to insert an import
 ;; - change abl-mode init to work also with files not inside the git dir (opened modules)
+;; - moving back to shell window if it has a pdb?
 
 ;;; abl-mode.el ends here
