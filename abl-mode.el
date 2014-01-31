@@ -351,7 +351,7 @@ running using ps."
       (string-to-number (match-string 1 test-output))
     0))
 
-(defstruct (testrun-output
+(defstruct (abl-testrun-output
 	    (:constructor new-testrun-output
 			  (text &optional (failed (abl-mode-failed-count text)))))
   text failed)
@@ -361,11 +361,13 @@ running using ps."
 marked point, create a testrun-output struct and put in the hash
 map for latest test run output."
   (if (string-match abl-mode-end-testrun-re line)
-      (puthash (buffer-name)
-	       (new-testrun-output (buffer-substring-no-properties
-				    (gethash (buffer-name) abl-mode-last-shell-points)
-				    (point)))
-	       abl-mode-last-test-output)))
+      (let ((testrun-output
+	     (new-testrun-output (buffer-substring-no-properties
+				  (gethash (buffer-name) abl-mode-last-shell-points)
+				  (point)))))
+	(puthash (buffer-name) testrun-output abl-mode-last-test-output)
+	(if (> (abl-testrun-output-failed testrun-output) 0)
+	    (message (format "Tests failed: %d" (abl-testrun-output-failed testrun-output)))))))
 
 (defun abl-mode-exec-command (command)
   (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
