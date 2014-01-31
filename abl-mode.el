@@ -152,6 +152,8 @@
 
 (defvar abl-mode-last-shell-points (make-hash-table :test 'equal))
 
+(defvar abl-mode-last-test-output (make-hash-table :test 'equal))
+
 (defvar abl-mode-shell-child-cmd
   (if (eq system-type 'darwin)
       "ps -j | grep %d | grep -v grep | grep -v \"/bin/bash\" | wc -l"
@@ -344,6 +346,26 @@ running using ps."
 	     (output (shell-command-to-string command)))
 	(/= (string-to-number output) 0)))))
 
+(defun abl-mode-failed-count (test-output)
+  (if (string-match "FAILED \(failures=\\([0-9]*\\)\)" test-output)
+      (string-to-number (match-string 1 test-output))
+    0))
+
+(defstruct (testrun-output
+	    (:constructor new-testrun-output
+			  (text &optional (failed (abl-mode-failed-count text)))))
+  text failed)
+
+(defun abl-shell-mode-output-filter (line)
+"If line is the closing line of a test output, copy from the last
+marked point, create a testrun-output struct and put in the hash
+map for latest test run output."
+  (if (string-match abl-mode-end-testrun-re line)
+      (puthash (buffer-name)
+	       (new-testrun-output (buffer-substring-no-properties
+				    (gethash (buffer-name) abl-mode-last-shell-points)
+				    (point)))
+	       abl-mode-last-test-output)))
 
 (defun abl-mode-exec-command (command)
   (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
@@ -372,11 +394,7 @@ running using ps."
 	  (switch-to-buffer open-shell-buffer)
 	(shell shell-name)
 	(add-to-list 'comint-output-filter-functions
-		     (lambda (line)
-		       (if (string-match abl-mode-end-testrun-re line)
-			     (message (buffer-substring-no-properties
-				       (gethash (buffer-name) abl-mode-last-shell-points)
-				       (point))))))
+		     'abl-shell-mode-output-filter)
 	(sleep-for 2)))
     (goto-char (point-max))
     (puthash shell-name (point) abl-mode-last-shell-points)
