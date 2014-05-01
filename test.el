@@ -20,7 +20,13 @@
    (format "        f.write('%s')\n" output-content)
 	   "        f.close()"))
 
-(defun setup-git-tests (&optional base)
+
+
+(defun makedir (dir)
+  (if (not (file-exists-p dir))
+      (make-directory dir)))
+
+(defun testenv-init (env)
   ;;create git repo with setup.py and a test file. the folder
   ;;structure will look something like this (the temp directory name
   ;;starting with abltest will be different):
@@ -36,19 +42,29 @@
   ;;             - test.py (contents: test-file-content)
   ;;             - __init__.py (contents: #nothing)
 
-  (let* ((base-dir (or base (make-temp-file "abltest" 't)))
-	 (project-dir (abl-mode-concat-paths base-dir project-subdir))
-	 (proof-dir (abl-mode-concat-paths base-dir "_proof")))
-    (if (not (file-exists-p base-dir)) (make-directory base-dir))
+    (makedir (testenv-base-dir env))
     (assert (abl-mode-index-of "Initialized empty Git repository"
 		      (shell-command-to-string
-		       (concat "git init " base-dir))))
-    (make-directory project-dir)
-    (make-directory proof-dir)
-    (write-to-file (abl-mode-concat-paths base-dir "setup.py") "blah")
-    (write-to-file (abl-mode-concat-paths project-dir test-file-name) test-file-content)
-    (write-to-file (abl-mode-concat-paths project-dir "__init__.py") "#nothing")
-    base-dir))
+		       (concat "git init " (testenv-base-dir env)))))
+    (makedir (testenv-project-dir env))
+    (makedir (testenv-proof-dir env))
+    (write-to-file (testenv-setup-py-path env) "blah")
+    (write-to-file (abl-mode-concat-paths (testenv-project-dir env)
+					  test-file-name)
+		   test-file-content)
+    (write-to-file (init-file-path env) "#nothing")
+    base-dir)
+
+(cl-defstruct (testenv
+	       (:constructor new-testenv
+			     (base-dir
+			      &optional
+			      (project-dir (abl-mode-concat-paths base-dir project-subdir))
+			      (proof-dir (abl-mode-concat-paths base-dir "_proof"))
+			      (setup-py-path (abl-mode-concat-paths base-dir "setup.py"))
+			      (test-file-path (abl-mode-concat-paths project-dir test-file-name))
+			      (init-file-path (abl-mode-concat-paths project-dir "__init__.py")))))
+  base-dir project-dir proof-dir setup-py-path test-file-path init-file-path)
 
 (defun commit-git (base-path)
     (shell-command-to-string
@@ -84,7 +100,7 @@
 (defmacro abl-git-test (&rest tests-etc)
   "Macro for tests. The first argument determines whether a dummy
 vem is created."
-  `(let* ((base-dir (setup-git-tests))
+  `(let* ((env (new-testenv (make-temp-file "abltest" 't)))
 	  (project-name (abl-mode-last-path-comp base-dir))
 	  (test-file-path (abl-mode-concat-paths base-dir "aproject" "test.py"))
 	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
