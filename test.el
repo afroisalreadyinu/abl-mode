@@ -3,6 +3,7 @@
 
 (require 'abl-mode)
 (require 'ert)
+(require 'cl)
 
 (defun write-to-file (file-path string)
   (with-temp-buffer (insert string)
@@ -76,11 +77,38 @@
   (let* ((base-dir (make-temp-file "yada" 't))
 	 (next-dir (abl-mode-concat-paths base-dir "etc"))
 	 (another-dir (abl-mode-concat-paths next-dir "blah")))
-    (make-directory next-dir)
-    (make-directory another-dir)
+    (mapc #'make-directory (list next-dir another-dir))
     (write-to-file (abl-mode-concat-paths base-dir "setup.py") "blah")
     another-dir))
 
+(defmacro abl-git-test (&rest tests-etc)
+  "Macro for tests. The first argument determines whether a dummy
+vem is created."
+  `(let* ((base-dir (setup-git-tests))
+	  (project-name (abl-mode-last-path-comp base-dir))
+	  (test-file-path (abl-mode-concat-paths base-dir "aproject" "test.py"))
+	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
+	  (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
+	  (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir)))
+     (unwind-protect
+	 (progn
+	   ,@tests-etc)
+	 ;;(cleanup base-dir)
+	 )))
+
+(defun abl-values-for-path (path)
+  (let ((buffer (find-file path)))
+    (list
+     (buffer-local-value 'abl-mode buffer)
+     (buffer-local-value 'abl-mode-branch buffer)
+     (buffer-local-value 'abl-mode-branch-base buffer)
+     (buffer-local-value 'abl-mode-project-name buffer)
+     (buffer-local-value 'abl-mode-vem-name buffer)
+     (buffer-local-value 'abl-mode-shell-name buffer))))
+
+
+
+;; Tests start here
 
 (ert-deftest test-abl-utils ()
   (should (string-equal (abl-mode-concat-paths "/tmp/blah" "yada" "etc")
@@ -102,13 +130,11 @@
 
 (ert-deftest test-path-funcs ()
   (should (not (abl-mode-find-base-dir "/home")))
-  (let ((path (create-dummy-project)))
-    (should (string-equal (abl-mode-find-base-dir path)
-			  (abl-mode-higher-dir (abl-mode-higher-dir path))))
-    (should (string-equal (abl-mode-find-base-dir (abl-mode-higher-dir (abl-mode-higher-dir path)))
-			  (abl-mode-higher-dir (abl-mode-higher-dir path))))
-    (let* ((base-path (abl-mode-find-base-dir path))
-	   (git-path (abl-mode-concat-paths base-path ".git"))
+  (let* ((path (create-dummy-project))
+	 (base-path (abl-mode-higher-dir (abl-mode-higher-dir path))))
+    (should (string-equal (abl-mode-find-base-dir path) base-path))
+    (should (string-equal (abl-mode-find-base-dir base-path) base-path))
+    (let* ((git-path (abl-mode-concat-paths base-path ".git"))
 	   (svn-path (abl-mode-concat-paths base-path ".svn")))
       (should (not (abl-mode-git-or-svn base-path)))
       (make-directory git-path)
@@ -141,136 +167,109 @@
     ))
 
 
-(defun abl-values-for-path (path)
-  (let ((buffer (find-file path)))
-    (list
-     (buffer-local-value 'abl-mode buffer)
-     (buffer-local-value 'abl-mode-branch buffer)
-     (buffer-local-value 'abl-mode-branch-base buffer)
-     (buffer-local-value 'abl-mode-project-name buffer)
-     (buffer-local-value 'abl-mode-vem-name buffer)
-     (buffer-local-value 'abl-mode-shell-name buffer))))
+;; (ert-deftest test-empty-git-abl ()
+;;   (abl-git-test
+;;     (let ((abl-values (abl-values-for-path test-file-path)))
+;;       (should (car abl-values))
+;;       (should (string-equal "none" (nth 1 abl-values)))
+;;       (should (string-equal base-dir (nth 2 abl-values)))
+;;       (should (string-equal project-name (nth 3 abl-values)))
+;;       (should (string-equal (concat project-name "_" "none") (nth 4 abl-values))))))
 
 
-(defmacro abl-git-test (&rest tests-etc)
-  "Macro for tests. The first argument determines whether a dummy
-vem is created."
-  `(let* ((base-dir (setup-git-tests))
-	  (project-name (abl-mode-last-path-comp base-dir))
-	  (test-file-path (abl-mode-concat-paths base-dir "aproject" "test.py"))
-	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
-	  (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
-	  (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir)))
-     (unwind-protect
-	 (progn
-	   ,@tests-etc)
-	 ;;(cleanup base-dir)
-	 )))
+;; (ert-deftest test-git-abl ()
+;;   (abl-git-test
+;;     (commit-git base-dir)
+;;     (let ((abl-values (abl-values-for-path test-file-path)))
+;;       (should (car abl-values))
+;;       (should (string-equal "master" (nth 1 abl-values)))
+;;       (should (string-equal base-dir (nth 2 abl-values)))
+;;       (should (string-equal project-name (nth 3 abl-values)))
+;;       (should (string-equal (concat project-name "_" "master")
+;; 			    (nth 4 abl-values)))
+;;       (should (string-equal (concat "ABL-SHELL:" project-name "_" "master")
+;; 			    (nth 5 abl-values))))))
 
 
-(ert-deftest test-empty-git-abl ()
-  (abl-git-test
-    (let ((abl-values (abl-values-for-path test-file-path)))
-      (should (car abl-values))
-      (should (string-equal "none" (nth 1 abl-values)))
-      (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values)))
-      (should (string-equal (concat project-name "_" "none") (nth 4 abl-values))))))
+;; (ert-deftest test-branched-git-abl ()
+;;   (abl-git-test
+;;     (commit-git base-dir)
+;;     (branch-git base-dir "gitbranch")
+;;     (let ((abl-values (abl-values-for-path test-file-path)))
+;;       (should (car abl-values))
+;;       (should (string-equal "gitbranch" (nth 1 abl-values)))
+;;       (should (string-equal base-dir (nth 2 abl-values)))
+;;       (should (string-equal project-name (nth 3 abl-values)))
+;;       (should (string-equal (concat project-name "_" "gitbranch")
+;; 			    (nth 4 abl-values)))
+;;       (should (string-equal (concat "ABL-SHELL:" project-name "_" "gitbranch")
+;; 			    (nth 5 abl-values))))))
 
 
-(ert-deftest test-git-abl ()
-  (abl-git-test
-    (commit-git base-dir)
-    (let ((abl-values (abl-values-for-path test-file-path)))
-      (should (car abl-values))
-      (should (string-equal "master" (nth 1 abl-values)))
-      (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values)))
-      (should (string-equal (concat project-name "_" "master")
-			    (nth 4 abl-values)))
-      (should (string-equal (concat "ABL-SHELL:" project-name "_" "master")
-			    (nth 5 abl-values))))))
+;; (ert-deftest test-git-abl-functionality ()
+;;   ;;this test checks whether the two main functionalities of running
+;;   ;;tests and running a server work
+;;   (abl-git-test
+;;     (commit-git base-dir)
+;;     (find-file test-file-path)
+;;     (goto-char (point-max))
+;;     (let* ((abl-values (abl-values-for-path test-file-path))
+;; 	   (test-path (abl-mode-get-test-entity))
+;; 	   (vemname (nth 4 abl-values)))
+;;       (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
+;;       (setq abl-mode-test-command (concat "echo '%s' > " test-proof-file-path))
+;;       (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
+;;       (shell-command-to-string (format "virtualenv %s"
+;; 				       (abl-mode-concat-paths abl-mode-vems-base-dir vemname)))
+;;       (should (string-equal test-path "aproject.test:AblTest.test_abl_mode"))
+;;       (abl-mode-run-test-at-point)
+;;       (sleep-for 1)
+;;       (should (file-exists-p vem-proof-file-path))
 
+;;       (save-excursion
+;; 	(find-file vem-proof-file-path)
+;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) vemname)))
 
-(ert-deftest test-branched-git-abl ()
-  (abl-git-test
-    (commit-git base-dir)
-    (branch-git base-dir "gitbranch")
-    (let ((abl-values (abl-values-for-path test-file-path)))
-      (should (car abl-values))
-      (should (string-equal "gitbranch" (nth 1 abl-values)))
-      (should (string-equal base-dir (nth 2 abl-values)))
-      (should (string-equal project-name (nth 3 abl-values)))
-      (should (string-equal (concat project-name "_" "gitbranch")
-			    (nth 4 abl-values)))
-      (should (string-equal (concat "ABL-SHELL:" project-name "_" "gitbranch")
-			    (nth 5 abl-values))))))
+;;       (should (file-exists-p test-proof-file-path))
 
+;;       (save-excursion
+;; 	(find-file test-proof-file-path)
+;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) test-path)))
 
-(ert-deftest test-git-abl-functionality ()
-  ;;this test checks whether the two main functionalities of running
-  ;;tests and running a server work
-  (abl-git-test
-    (commit-git base-dir)
-    (find-file test-file-path)
-    (goto-char (point-max))
-    (let* ((abl-values (abl-values-for-path test-file-path))
-	   (test-path (abl-mode-get-test-entity))
-	   (vemname (nth 4 abl-values)))
-      (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
-      (setq abl-mode-test-command (concat "echo '%s' > " test-proof-file-path))
-      (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
-      (shell-command-to-string (format "virtualenv %s"
-				       (abl-mode-concat-paths abl-mode-vems-base-dir vemname)))
-      (should (string-equal test-path "aproject.test:AblTest.test_abl_mode"))
-      (abl-mode-run-test-at-point)
-      (sleep-for 1)
-      (should (file-exists-p vem-proof-file-path))
+;;       (find-file test-file-path)
+;;       (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
+;;       (cleanup abl-mode-vems-base-dir))))
 
-      (save-excursion
-	(find-file vem-proof-file-path)
-	(should (string= (buffer-substring (point-min) (- (point-max) 1)) vemname)))
+;; (ert-deftest test-replacement-vem ()
+;;   (abl-git-test
+;;     (commit-git base-dir)
+;;     (let* ((abl-values (abl-values-for-path test-file-path))
+;; 	   (master-vemname (nth 4 abl-values))
+;; 	   (new-branch "gitbranch")
+;; 	   (branch-vemname (concat project-name "_" new-branch))
+;; 	   (test-buff (find-file test-file-path)))
+;;       (goto-char (point-max))
+;;       (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
+;;       (shell-command-to-string (format "virtualenv %s"
+;; 				       (abl-mode-concat-paths abl-mode-vems-base-dir master-vemname)))
+;;       (should (= 0 (length abl-mode-replacement-vems)))
 
-      (should (file-exists-p test-proof-file-path))
+;;       (branch-git base-dir new-branch)
+;;       (setq abl-mode-replacement-vems (list (cons branch-vemname master-vemname)))
+;;       (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
 
-      (save-excursion
-	(find-file test-proof-file-path)
-	(should (string= (buffer-substring (point-min) (- (point-max) 1)) test-path)))
+;;       (revert-buffer test-buff t nil)
+;;       (goto-char (point-max))
+;;       (abl-mode-run-test-at-point)
+;;       (sleep-for 1)
+;;       (should (file-exists-p vem-proof-file-path))
+;;       (save-excursion
+;; 	(find-file vem-proof-file-path)
+;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1))
+;; 			 master-vemname)))
 
-      (find-file test-file-path)
-      (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
-      (cleanup abl-mode-vems-base-dir))))
-
-(ert-deftest test-replacement-vem ()
-  (abl-git-test
-    (commit-git base-dir)
-    (let* ((abl-values (abl-values-for-path test-file-path))
-	   (master-vemname (nth 4 abl-values))
-	   (new-branch "gitbranch")
-	   (branch-vemname (concat project-name "_" new-branch))
-	   (test-buff (find-file test-file-path)))
-      (goto-char (point-max))
-      (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
-      (shell-command-to-string (format "virtualenv %s"
-				       (abl-mode-concat-paths abl-mode-vems-base-dir master-vemname)))
-      (should (= 0 (length abl-mode-replacement-vems)))
-
-      (branch-git base-dir new-branch)
-      (setq abl-mode-replacement-vems (list (cons branch-vemname master-vemname)))
-      (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
-
-      (revert-buffer test-buff t nil)
-      (goto-char (point-max))
-      (abl-mode-run-test-at-point)
-      (sleep-for 1)
-      (should (file-exists-p vem-proof-file-path))
-      (save-excursion
-	(find-file vem-proof-file-path)
-	(should (string= (buffer-substring (point-min) (- (point-max) 1))
-			 master-vemname)))
-
-      (cleanup abl-mode-vems-base-dir)
-      )))
+;;       (cleanup abl-mode-vems-base-dir)
+;;       )))
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
