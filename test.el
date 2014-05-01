@@ -61,15 +61,12 @@
     (makedir (testenv-proof-dir env))
     (write-to-file (testenv-setup-py-path env) "blah")
     (write-to-file (testenv-test-file-path env) test-file-content)
-    (write-to-file (testenv-init-file-path env) "#nothing"))
-
-(defun commit-git (base-path)
+    (write-to-file (testenv-init-file-path env) "#nothing")
     (shell-command-to-string
      (format
-      "cd %s && git add setup.py && git add %s/%s && git commit -am 'haha'"
-      base-path
-      project-subdir
-      test-file-name)))
+      "cd %s && git add setup.py && git add %s && git commit -am 'haha'"
+      (testenv-base-dir env)
+      (abl-mode-concat-paths project-subdir test-file-name))))
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
