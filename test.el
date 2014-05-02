@@ -77,6 +77,9 @@
 (defun testenv-project-name (env)
   (abl-mode-last-path-comp (testenv-project-dir env)))
 
+(defun testenv-containing-dir (env)
+  (file-name-directory (directory-file-name (testenv-base-dir env))))
+
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
 			    "cd %s && git branch %s && git checkout %s"
@@ -182,7 +185,7 @@ vem is created."
   (let* ((env (testenv-init (random-testenv)))
     (should (string-equal (abl-mode-branch-name (testenv-project-dir env)) "master"))
     (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
-			  (abl-mode-last-path-comp (testenv-project-dir env))))
+			  (testenv-project-name env)))
 
     (should (string-equal (abl-mode-get-vem-name "master" "project")
      			  "project_master"))
@@ -190,9 +193,9 @@ vem is created."
     (cleanup (abl-mode-concat-paths (testenv-project-dir env) ".git"))
     (make-directory (abl-mode-concat-paths (testenv-project-dir env) ".svn"))
     (should (string-equal (abl-mode-branch-name (testenv-project-dir env))
-			  (abl-mode-last-path-comp (testenv-project-dir env))))
-    (should (string-equal (abl-mode-get-project-name project-path) top-dir-name))
-    (cleanup top-dir)
+     			  (testenv-project-name env)))
+    (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
+     			  (testenv-containing-dir env)))
  )))
 
 
