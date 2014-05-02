@@ -507,12 +507,12 @@ if none of these is true."
 		(save-excursion
 		  (re-search-backward "^class *" nil t))))
 	  (cond
-	 ((not (or test-func-pos test-class-pos))
-	  (error "You are neither in a test class nor a test function."))
-	 ((and test-func-pos
-	       (and test-class-pos (< test-class-pos test-func-pos)))
-	  (abl-mode-get-test-function-path file-path))
-	 (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name)))))))))
+	   ((not (or test-func-pos test-class-pos))
+	    (error "You are neither in a test class nor a test function."))
+	   ((and test-func-pos
+		 (and test-class-pos (< test-class-pos test-func-pos)))
+	    (abl-mode-get-test-function-path file-path))
+	   (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name)))))))))
 
 
 (defun abl-mode-run-test-at-point ()
