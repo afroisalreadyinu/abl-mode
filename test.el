@@ -153,7 +153,10 @@ vem is created."
     (mapc #'make-directory (list (abl-mode-concat-paths git-dir ".git")
 				 (abl-mode-concat-paths svn-dir ".svn")
 				 git-deeper svn-deeper))
-    (should (string-equal (abl-mode-git-or-svn git-dir) "git"))))
+    (should (string-equal (abl-mode-git-or-svn git-dir) "git"))
+    (should (string-equal (abl-mode-git-or-svn git-deeper) "git"))
+    (should (string-equal (abl-mode-git-or-svn svn-dir) "svn"))
+    (should (string-equal (abl-mode-git-or-svn svn-deeper) "svn"))))
 
 
 (ert-deftest test-path-funcs ()
