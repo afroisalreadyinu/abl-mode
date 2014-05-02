@@ -11,17 +11,24 @@
   (with-temp-buffer (insert string)
 		    (write-region (point-min) (point-max) file-path)))
 
+(defun read-from-file (file-path)
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (buffer-string)))
+
 (defvar project-subdir "aproject")
 (defvar test-file-name "project_tests.py")
 (defvar output-file-path "/tmp/tc.txt")
+(defvar proof-file-name "out.txt")
 (defvar test-file-content
-  (concat "import os\n"
+  (concat "import unittest\n"
 	  "\n"
-	  "class AblTest(object):\n"
+	  "class AblTest(unittest.TestCase):\n"
 	  "#marker\n"
 	  "    def test_abl_mode(self):\n"
-	  "        f = open('OUTPUTPATH')\n"
+	  "        f = open('OUTPUTPATH', 'w')\n"
 	  "        f.write('TXTOUTPUT')\n"
+	  "        f.flush()\n"
 	  "        f.close()"
 	  "\n"
 	  "    def test_other_thing(self):\n"
@@ -83,6 +90,9 @@
 
 (defun testenv-base-dirname (env)
   (abl-mode-last-path-comp (directory-file-name (testenv-base-dir env))))
+
+(defun testenv-proof-file (env)
+  (abl-mode-concat-paths (testenv-proof-dir env) "out.txt"))
 
 (defun testenv-branch-git (env branch-name)
   (shell-command-to-string (format
@@ -232,57 +242,29 @@ vem is created."
 			 "aproject.project_tests"))
    (search-forward "marker")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests:AblTest"))
+			 "aproject.project_tests.AblTest"))
    (search-forward "f.write")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests:AblTest.test_abl_mode"))
+			 "aproject.project_tests.AblTest.test_abl_mode"))
    (search-forward "pass")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests:AblTest.test_other_thing"))
+			 "aproject.project_tests.AblTest.test_other_thing"))
 ))
 
-;; (ert-deftest test-running-tests ()
-;;   (abl-git-test
-;;    (find-file (testenv-test-file-path env))
-;;    (goto-char (point-max))
 
-
-
-
-
-;; (ert-deftest test-git-abl-functionality ()
-;;   ;;this test checks whether the two main functionalities of running
-;;   ;;tests and running a server work
-;;   (abl-git-test
-;;     (commit-git base-dir)
-;;     (find-file test-file-path)
-;;     (goto-char (point-max))
-;;     (let* ((abl-values (abl-values-for-path test-file-path))
-;; 	   (test-path (abl-mode-get-test-entity))
-;; 	   (vemname (nth 4 abl-values)))
-;;       (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
-;;       (setq abl-mode-test-command (concat "echo '%s' > " test-proof-file-path))
-;;       (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
-;;       (shell-command-to-string (format "virtualenv %s"
-;; 				       (abl-mode-concat-paths abl-mode-vems-base-dir vemname)))
-;;       (should (string-equal test-path "aproject.test:AblTest.test_abl_mode"))
-;;       (abl-mode-run-test-at-point)
-;;       (sleep-for 1)
-;;       (should (file-exists-p vem-proof-file-path))
-
-;;       (save-excursion
-;; 	(find-file vem-proof-file-path)
-;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) vemname)))
-
-;;       (should (file-exists-p test-proof-file-path))
-
-;;       (save-excursion
-;; 	(find-file test-proof-file-path)
-;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1)) test-path)))
-
-;;       (find-file test-file-path)
-;;       (setq start-server-command (format "echo `pwd` > %s" run-proof-file-path))
-;;       (cleanup abl-mode-vems-base-dir))))
+(ert-deftest test-running-tests ()
+  (abl-git-test
+   (find-file (testenv-test-file-path env))
+   (goto-char (point-min))
+   (replace-string "OUTPUTPATH" (testenv-proof-file env))
+   (replace-string "TXTOUTPUT" "blah blah")
+   (save-buffer)
+   (setq abl-mode-check-and-activate-ve nil)
+   (abl-mode-run-test-at-point)
+   (sleep-for 1)
+   (should (file-exists-p (testenv-proof-file env)))
+   (should (string-equal (read-from-file (testenv-proof-file env))
+			 "blah blah"))))
 
 ;; (ert-deftest test-replacement-vem ()
 ;;   (abl-git-test
