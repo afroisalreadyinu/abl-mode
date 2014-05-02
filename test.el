@@ -12,15 +12,20 @@
 		    (write-region (point-min) (point-max) file-path)))
 
 (defvar project-subdir "aproject")
-(defvar test-file-name "test.py")
+(defvar test-file-name "project_tests.py")
 (defvar output-file-path "/tmp/tc.txt")
-(defvar output-content "ABL MODE WAS HERE")
 (defvar test-file-content
-  (concat "class AblTest(object):\n"
-	   "    def test_abl_mode():\n"
-   (format "        f = open('%s')\n" output-file-path)
-   (format "        f.write('%s')\n" output-content)
-	   "        f.close()"))
+  (concat "import os\n"
+	  "\n"
+	  "class AblTest(object):\n"
+	  "#marker\n"
+	  "    def test_abl_mode(self):\n"
+	  "        f = open('OUTPUTPATH')\n"
+	  "        f.write('TXTOUTPUT')\n"
+	  "        f.close()"
+	  "\n"
+	  "    def test_other_thing(self):\n"
+	  "        pass"))
 
 
 
@@ -55,7 +60,7 @@
   ;;        - _proof (dir)
   ;;        - aproject
   ;;             |
-  ;;             - test.py (contents: test-file-content)
+  ;;             - project_tests.py (contents: test-file-content)
   ;;             - __init__.py (contents: #nothing)
     (makedir (testenv-base-dir env))
     (assert (abl-mode-index-of "Initialized empty Git repository"
@@ -79,10 +84,10 @@
 (defun testenv-base-dirname (env)
   (abl-mode-last-path-comp (directory-file-name (testenv-base-dir env))))
 
-(defun branch-git (base-path branch-name)
+(defun testenv-branch-git (env branch-name)
   (shell-command-to-string (format
 			    "cd %s && git branch %s && git checkout %s"
-			    base-path branch-name branch-name)))
+			    (testenv-base-dir env) branch-name branch-name)))
 
 (defun cleanup (path)
   ;; rm -rf's a folder which begins with /tmp. you shouldn't put
@@ -203,19 +208,46 @@ vem is created."
 			    (concat (testenv-base-dirname env) "_master")))
 )))
 
-;; (ert-deftest test-branched-git-abl ()
+
+(ert-deftest test-branched-git-abl ()
+  (abl-git-test
+   (testenv-branch-git env "gitbranch")
+   (let ((test-buffer (find-file (testenv-test-file-path env))))
+     (should (buffer-local-value 'abl-mode test-buffer))
+     (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
+			   "gitbranch"))
+     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
+			   (testenv-base-dir env)))
+     (should (string-equal (testenv-base-dirname env)
+			   (buffer-local-value 'abl-mode-project-name test-buffer)))
+      (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
+			    (concat (testenv-base-dirname env) "_gitbranch")))
+)))
+
+(ert-deftest test-test-at-point ()
+  (abl-git-test
+   (find-file (testenv-test-file-path env))
+   (goto-char (point-min))
+   (should (string-equal (abl-mode-get-test-entity)
+			 "aproject.project_tests"))
+   (search-forward "marker")
+   (should (string-equal (abl-mode-get-test-entity)
+			 "aproject.project_tests:AblTest"))
+   (search-forward "f.write")
+   (should (string-equal (abl-mode-get-test-entity)
+			 "aproject.project_tests:AblTest.test_abl_mode"))
+   (search-forward "pass")
+   (should (string-equal (abl-mode-get-test-entity)
+			 "aproject.project_tests:AblTest.test_other_thing"))
+))
+
+;; (ert-deftest test-running-tests ()
 ;;   (abl-git-test
-;;     (commit-git base-dir)
-;;     (branch-git base-dir "gitbranch")
-;;     (let ((abl-values (abl-values-for-path test-file-path)))
-;;       (should (car abl-values))
-;;       (should (string-equal "gitbranch" (nth 1 abl-values)))
-;;       (should (string-equal base-dir (nth 2 abl-values)))
-;;       (should (string-equal project-name (nth 3 abl-values)))
-;;       (should (string-equal (concat project-name "_" "gitbranch")
-;; 			    (nth 4 abl-values)))
-;;       (should (string-equal (concat "ABL-SHELL:" project-name "_" "gitbranch")
-;; 			    (nth 5 abl-values))))))
+;;    (find-file (testenv-test-file-path env))
+;;    (goto-char (point-max))
+
+
+
 
 
 ;; (ert-deftest test-git-abl-functionality ()
