@@ -39,6 +39,9 @@
 			      (init-file-path (abl-mode-concat-paths project-dir "__init__.py")))))
   base-dir project-dir proof-dir setup-py-path test-file-path init-file-path)
 
+(defun random-testenv ()
+  (new-testenv (make-temp-file "abltest" 't)))
+
 (defun testenv-init (env)
   ;;create git repo with setup.py and a test file. the folder
   ;;structure will look something like this (the temp directory name
@@ -68,7 +71,8 @@
      (format
       "cd %s && git add setup.py && git add %s && git commit -am 'haha'"
       (testenv-base-dir env)
-      (abl-mode-concat-paths project-subdir test-file-name))))
+      (abl-mode-concat-paths project-subdir test-file-name)))
+    env)
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
@@ -118,8 +122,7 @@ vem is created."
      (buffer-local-value 'abl-mode-vem-name buffer)
      (buffer-local-value 'abl-mode-shell-name buffer))))
 
-
-
+;; -----------------------------------------------------------------------------------------
 ;; Tests start here
 
 (ert-deftest test-abl-utils ()
@@ -160,23 +163,21 @@ vem is created."
 
 (ert-deftest test-project-name-etc ()
   (should (string-equal (abl-mode-branch-name "/home") "home"))
-  (let* ((top-dir (make-temp-file "blah" 't))
-	 (top-dir-name (abl-mode-last-path-comp top-dir))
-	 (project-path (abl-mode-concat-paths top-dir "project")))
-    (setup-git-tests project-path)
-    (commit-git project-path)
-    (should (string-equal (abl-mode-branch-name project-path) "master"))
-    (should (string-equal (abl-mode-get-project-name project-path) "project"))
+  (let* ((env (testenv-init (random-testenv)))
+    (should (string-equal (abl-mode-branch-name (testenv-project-dir env)) "master"))
+    (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
+			  (abl-mode-last-path-comp (testenv-project-dir env))))
 
     (should (string-equal (abl-mode-get-vem-name "master" "project")
-			  "project_master"))
+     			  "project_master"))
 
-    (cleanup (abl-mode-concat-paths project-path ".git"))
-    (make-directory (abl-mode-concat-paths project-path ".svn"))
-    (should (string-equal (abl-mode-branch-name project-path) "project"))
+    (cleanup (abl-mode-concat-paths (testenv-project-dir env) ".git"))
+    (make-directory (abl-mode-concat-paths (testenv-project-dir env) ".svn"))
+    (should (string-equal (abl-mode-branch-name (testenv-project-dir env))
+			  (abl-mode-last-path-comp (testenv-project-dir env))))
     (should (string-equal (abl-mode-get-project-name project-path) top-dir-name))
     (cleanup top-dir)
-    ))
+ )))
 
 
 ;; (ert-deftest test-empty-git-abl ()
