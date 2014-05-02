@@ -34,6 +34,9 @@
 	  "    def test_other_thing(self):\n"
 	  "        pass"))
 
+(defvar setup-content
+  (concat "from setuptools import setup\n"
+	  "setup(name='test')\n"))
 
 
 (defun makedir (dir)
@@ -63,7 +66,7 @@
   ;;   - abltest18945
   ;;        |
   ;;        - .git
-  ;;        - setup.py (contents: blah)
+  ;;        - setup.py
   ;;        - _proof (dir)
   ;;        - aproject
   ;;             |
@@ -75,7 +78,7 @@
 		       (concat "git init " (testenv-base-dir env)))))
     (makedir (testenv-project-dir env))
     (makedir (testenv-proof-dir env))
-    (write-to-file (testenv-setup-py-path env) "blah")
+    (write-to-file (testenv-setup-py-path env) setup-content)
     (write-to-file (testenv-test-file-path env) test-file-content)
     (write-to-file (testenv-init-file-path env) "#nothing")
     (shell-command-to-string
@@ -250,6 +253,21 @@ vem is created."
    (should (string-equal (abl-mode-get-test-entity)
 			 "aproject.project_tests.AblTest.test_other_thing"))
 ))
+
+(ert-deftest test-ve-check-and-activation ()
+  (let ((collected-msgs '())
+	(output-dir (make-temp-file "testout" 't)))
+    (flet ((read-from-minibuffer
+	    (msg)
+	    (setq collected-msgs (append collected-msgs (list msg)))
+	    (if (= (length collected-msgs) 1)
+		"test-ve"
+	      "y")))
+    (abl-git-test
+     (find-file (testenv-test-file-path env))
+     (setq abl-mode-ve-create-command (concat "cd " output-dir " && touch %s"))
+     (abl-mode-exec-command "ls")
+     (file-exists-p (abl-mode-concat-paths output-dir "test-ve"))))))
 
 
 (ert-deftest test-running-tests ()
