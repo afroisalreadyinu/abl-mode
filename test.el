@@ -74,6 +74,9 @@
       (abl-mode-concat-paths project-subdir test-file-name)))
     env)
 
+(defun testenv-project-name (env)
+  (abl-mode-last-path-comp (testenv-project-dir env)))
+
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
 			    "cd %s && git branch %s && git checkout %s"
@@ -140,8 +143,18 @@ vem is created."
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha") "haha"))
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha/") "haha"))
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha.py") "haha.py"))
-  (should (not (abl-mode-last-path-comp "")))
-  )
+  (should (not (abl-mode-last-path-comp ""))))
+
+(ert-deftest test-cvs-utils ()
+  (let* ((git-dir (make-temp-file "" 't))
+	 (git-deeper (abl-mode-concat-paths git-dir "blah"))
+	 (svn-dir (make-temp-file "" 't))
+	 (svn-deeper (abl-mode-concat-paths svn-dir "yada")))
+    (mapc #'make-directory (list (abl-mode-concat-paths git-dir ".git")
+				 (abl-mode-concat-paths svn-dir ".svn")
+				 git-deeper svn-deeper))
+    (should (string-equal (abl-mode-git-or-svn git-dir) "git"))))
+
 
 (ert-deftest test-path-funcs ()
   (should (not (abl-mode-find-base-dir "/home")))
