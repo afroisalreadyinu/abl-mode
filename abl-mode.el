@@ -85,7 +85,7 @@
   "The command for activating a virtual environment")
 (make-variable-buffer-local 'abl-mode-ve-create-command)
 
-(defcustom abl-mode-test-command "nosetests -s %s"
+(defcustom abl-mode-test-command "python -m unittest %s"
   "The command for running tests")
 (make-variable-buffer-local 'abl-mode-test-command)
 
@@ -108,6 +108,10 @@
 (defcustom abl-mode-test-file-regexp ".*_tests.py"
 "regexp used to check whether a file is a test file")
 (make-variable-buffer-local 'abl-mode-test-file-regexp)
+
+(defcustom abl-mode-test-path-module-class-separator "."
+"regexp used to check whether a file is a test file")
+(make-variable-buffer-local 'abl-mode-test-path-module-class-separator)
 
 (defcustom abl-mode-code-file-tests-regexps
   '("^\"\"\"[^(\"\"\")]*\\(^tests:\\)" "^'''[^(''')]*\\(^tests:\\)")
@@ -453,9 +457,9 @@ followed by a proper class name).")
 (defun abl-mode-get-test-function-path (file-path)
   (let ((function-name (abl-mode-determine-test-function-name)))
     (if (not (abl-mode-test-in-class))
-	(concat file-path ":" function-name)
+	(concat file-path abl-mode-test-path-module-class-separator function-name)
       (let ((class-name (abl-mode-determine-test-class-name)))
-	(concat file-path ":" class-name "." function-name)))))
+	(concat file-path abl-mode-test-path-module-class-separator class-name "." function-name)))))
 
 
 (defun abl-mode-run-test (test-path &optional branch-name)
@@ -512,7 +516,9 @@ if none of these is true."
 	   ((and test-func-pos
 		 (and test-class-pos (< test-class-pos test-func-pos)))
 	    (abl-mode-get-test-function-path file-path))
-	   (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name)))))))))
+	   (test-class-pos (concat file-path
+				   abl-mode-test-path-module-class-separator
+				   (abl-mode-determine-test-class-name)))))))))
 
 
 (defun abl-mode-run-test-at-point ()
