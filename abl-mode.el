@@ -290,12 +290,21 @@ return str"
       (substring git-output (match-beginning 1) (match-end 1)))))
 
 
+(defun abl-mode-get-svn-branch-name (base-dir)
+  (let* ((project-base (locate-dominating-file (abl-mode-concat-paths base-dir) ".svn")))
+    (if (not project-base (error "SVN branch name of non-svn repo could not be found")))
+    (abl-mode-last-path-comp project-base)))
+
+
 (defun abl-mode-branch-name (path)
+  "If svn, name of directory in which .svn resides. If git, git
+branch. If no vcs, "
   (if (string= path "/")
       nil
     (let ((vcs (abl-mode-git-or-svn path)))
-      (cond ((or (not vcs) (string-equal vcs "svn"))
-	     (abl-mode-last-path-comp path))
+      (cond ((not vcs) (abl-mode-last-path-comp path))
+	    ((string-equal vcs "svn")
+	     (abl-mode-get-svn-branch-name path))
 	    ((string-equal vcs "git")
 	     (abl-mode-get-git-branch-name path))
 	    (t nil)))))
@@ -307,7 +316,8 @@ return str"
   (if (string= path "/")
       nil
     (let ((vcs (abl-mode-git-or-svn path)))
-      (cond ((or (not vcs) (string-equal vcs "svn"))
+      (cond ((not vcs) (abl-mode-last-path-comp path))
+	    ((string-equal vcs "svn")
 	     (abl-mode-last-path-comp (abl-mode-higher-dir path)))
 	    ((string-equal vcs "git")
 	     (abl-mode-last-path-comp path))

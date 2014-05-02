@@ -57,7 +57,6 @@
   ;;             |
   ;;             - test.py (contents: test-file-content)
   ;;             - __init__.py (contents: #nothing)
-
     (makedir (testenv-base-dir env))
     (assert (abl-mode-index-of "Initialized empty Git repository"
 		      (shell-command-to-string
@@ -77,8 +76,8 @@
 (defun testenv-project-name (env)
   (abl-mode-last-path-comp (testenv-project-dir env)))
 
-(defun testenv-containing-dir (env)
-  (file-name-directory (directory-file-name (testenv-base-dir env))))
+(defun testenv-base-dirname (env)
+  (abl-mode-last-path-comp (directory-file-name (testenv-base-dir env))))
 
 (defun branch-git (base-path branch-name)
   (shell-command-to-string (format
@@ -95,23 +94,14 @@
   (shell-command-to-string
    (concat "rm -rf " path)))
 
-(defun create-dummy-project ()
-  (let* ((base-dir (make-temp-file "yada" 't))
-	 (next-dir (abl-mode-concat-paths base-dir "etc"))
-	 (another-dir (abl-mode-concat-paths next-dir "blah")))
-    (mapc #'make-directory (list next-dir another-dir))
-    (write-to-file (abl-mode-concat-paths base-dir "setup.py") "blah")
-    another-dir))
-
 (defmacro abl-git-test (&rest tests-etc)
   "Macro for tests. The first argument determines whether a dummy
 vem is created."
-  `(let* ((env (new-testenv (make-temp-file "abltest" 't)))
-	  (project-name (abl-mode-last-path-comp base-dir))
-	  (test-file-path (abl-mode-concat-paths base-dir "aproject" "test.py"))
-	  (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
-	  (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
-	  (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir)))
+  `(let* ((env (testenv-init (random-testenv)))
+	  ;; (vem-proof-file-path (format "%s/_proof/proveit.txt" base-dir))
+	  ;; (test-proof-file-path (format "%s/_proof/prove_test.txt" base-dir))
+	  ;; (run-proof-file-path (format "%s/_proof/prove_run.txt" base-dir))
+	  )
      (unwind-protect
 	 (progn
 	   ,@tests-etc)
@@ -152,32 +142,16 @@ vem is created."
   (let* ((git-dir (make-temp-file "" 't))
 	 (git-deeper (abl-mode-concat-paths git-dir "blah"))
 	 (svn-dir (make-temp-file "" 't))
-	 (svn-deeper (abl-mode-concat-paths svn-dir "yada")))
+	 (svn-deeper (abl-mode-concat-paths svn-dir "yada"))
+	 (empty-dir (make-temp-file "" 't)))
     (mapc #'make-directory (list (abl-mode-concat-paths git-dir ".git")
 				 (abl-mode-concat-paths svn-dir ".svn")
 				 git-deeper svn-deeper))
     (should (string-equal (abl-mode-git-or-svn git-dir) "git"))
     (should (string-equal (abl-mode-git-or-svn git-deeper) "git"))
     (should (string-equal (abl-mode-git-or-svn svn-dir) "svn"))
-    (should (string-equal (abl-mode-git-or-svn svn-deeper) "svn"))))
-
-
-(ert-deftest test-path-funcs ()
-  (should (not (abl-mode-find-base-dir "/home")))
-  (let* ((path (create-dummy-project))
-	 (base-path (abl-mode-higher-dir (abl-mode-higher-dir path))))
-    (should (string-equal (abl-mode-find-base-dir path) base-path))
-    (should (string-equal (abl-mode-find-base-dir base-path) base-path))
-    (let* ((git-path (abl-mode-concat-paths base-path ".git"))
-	   (svn-path (abl-mode-concat-paths base-path ".svn")))
-      (should (not (abl-mode-git-or-svn base-path)))
-      (make-directory git-path)
-      (should (string-equal (abl-mode-git-or-svn base-path) "git"))
-      (cleanup git-path)
-      (make-directory svn-path)
-      (should (string-equal (abl-mode-git-or-svn base-path) "svn"))
-      (cleanup base-path)
-    )))
+    (should (string-equal (abl-mode-git-or-svn svn-deeper) "svn"))
+    (should (not (abl-mode-git-or-svn empty-dir)))))
 
 
 (ert-deftest test-project-name-etc ()
@@ -195,18 +169,24 @@ vem is created."
     (should (string-equal (abl-mode-branch-name (testenv-project-dir env))
      			  (testenv-project-name env)))
     (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
-     			  (testenv-containing-dir env)))
+     			  (testenv-base-dirname env)))
  )))
 
 
-;; (ert-deftest test-empty-git-abl ()
-;;   (abl-git-test
-;;     (let ((abl-values (abl-values-for-path test-file-path)))
-;;       (should (car abl-values))
-;;       (should (string-equal "none" (nth 1 abl-values)))
-;;       (should (string-equal base-dir (nth 2 abl-values)))
-;;       (should (string-equal project-name (nth 3 abl-values)))
-;;       (should (string-equal (concat project-name "_" "none") (nth 4 abl-values))))))
+(ert-deftest test-empty-git-abl ()
+  (abl-git-test
+   (cleanup (abl-mode-concat-paths (testenv-base-dir env) ".git"))
+   (let ((test-buffer (find-file (testenv-test-file-path env))))
+     (should (buffer-local-value 'abl-mode test-buffer))
+     (should (string-equal (testenv-base-dirname env)
+			   (buffer-local-value 'abl-mode-branch test-buffer)))
+     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
+			   (testenv-base-dir env)))
+     (should (string-equal (testenv-base-dirname env)
+			   (buffer-local-value 'abl-mode-project-name test-buffer)))
+     (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
+			   (concat (testenv-base-dirname env) "_" "none")))
+)))
 
 
 ;; (ert-deftest test-git-abl ()
