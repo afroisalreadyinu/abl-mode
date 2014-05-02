@@ -161,7 +161,7 @@ vem is created."
     (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
 			  (testenv-project-name env)))
 
-    (should (string-equal (abl-mode-get-vem-name "master" "project")
+    (should (string-equal (abl-mode-get-ve-name "master" "project")
      			  "project_master"))
 
     (cleanup (abl-mode-concat-paths (testenv-project-dir env) ".git"))
@@ -178,30 +178,30 @@ vem is created."
    (cleanup (abl-mode-concat-paths (testenv-base-dir env) ".git"))
    (let ((test-buffer (find-file (testenv-test-file-path env))))
      (should (buffer-local-value 'abl-mode test-buffer))
-     (should (string-equal (testenv-base-dirname env)
-			   (buffer-local-value 'abl-mode-branch test-buffer)))
+     (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
+			   (testenv-base-dirname env)))
+     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
+			   (testenv-base-dir env)))
+     (should (string-equal (buffer-local-value 'abl-mode-project-name test-buffer)
+			   (testenv-base-dirname env)))
+     (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
+			   (concat (testenv-base-dirname env) "_" (testenv-base-dirname env))))
+)))
+
+
+(ert-deftest test-git-abl ()
+  (abl-git-test
+   (let ((test-buffer (find-file (testenv-test-file-path env))))
+     (should (buffer-local-value 'abl-mode test-buffer))
+     (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
+			   "master"))
      (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
 			   (testenv-base-dir env)))
      (should (string-equal (testenv-base-dirname env)
 			   (buffer-local-value 'abl-mode-project-name test-buffer)))
-     (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
-			   (concat (testenv-base-dirname env) "_" "none")))
+      (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
+			    (concat (testenv-base-dirname env) "_master")))
 )))
-
-
-;; (ert-deftest test-git-abl ()
-;;   (abl-git-test
-;;     (commit-git base-dir)
-;;     (let ((abl-values (abl-values-for-path test-file-path)))
-;;       (should (car abl-values))
-;;       (should (string-equal "master" (nth 1 abl-values)))
-;;       (should (string-equal base-dir (nth 2 abl-values)))
-;;       (should (string-equal project-name (nth 3 abl-values)))
-;;       (should (string-equal (concat project-name "_" "master")
-;; 			    (nth 4 abl-values)))
-;;       (should (string-equal (concat "ABL-SHELL:" project-name "_" "master")
-;; 			    (nth 5 abl-values))))))
-
 
 ;; (ert-deftest test-branched-git-abl ()
 ;;   (abl-git-test

@@ -46,7 +46,7 @@
 	  (setq abl-mode-branch-base project-base)
 	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
-	  (setq abl-mode-ve-name (abl-mode-get-vem-name))
+	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				     abl-mode-project-name
 				     abl-mode-branch))
@@ -323,7 +323,7 @@ branch. If no vcs, "
 	     (abl-mode-last-path-comp path))
 	    (t nil)))))
 
-(defun abl-mode-get-vem-name (&optional branch project)
+(defun abl-mode-get-ve-name (&optional branch project)
   (let ((branch-name (or branch abl-mode-branch))
 	(prjct-name (or project abl-mode-project-name)))
     (or
