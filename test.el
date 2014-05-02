@@ -1,4 +1,6 @@
-;; to run the tests:
+;; to run the tests, with emacs > 24:
+;; emacs -q -L . -l test.el --batch
+;; with earlier emacs versions:
 ;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
 
 (require 'abl-mode)
