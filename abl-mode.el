@@ -341,10 +341,10 @@ branch. If no vcs, "
   (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
 
 
-(defun abl-shell-busy ()
+(defun abl-shell-busy (&optional shell-name)
   "Find out whether the shell has any child processes
 running using ps."
-  (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
+  (let ((abl-shell-buffer (get-buffer (or shell-name abl-mode-shell-name))))
     (if (not abl-shell-buffer)
 	nil
       (let* ((shell-process-id (process-id (get-buffer-process abl-shell-buffer)))
