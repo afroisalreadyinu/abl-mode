@@ -21,7 +21,7 @@
 (defvar output-file-path "/tmp/tc.txt")
 (defvar proof-file-name "out.txt")
 (defvar test-file-content
-  (concat "import unittest\n"
+  (concat "import os,unittest\n"
 	  "\n"
 	  "class AblTest(unittest.TestCase):\n"
 	  "#marker\n"
@@ -29,7 +29,8 @@
 	  "        f = open('OUTPUTPATH', 'w')\n"
 	  "        f.write('TXTOUTPUT')\n"
 	  "        f.flush()\n"
-	  "        f.close()"
+	  "        f.close()\n"
+	  "        os.fsync()\n"
 	  "\n"
 	  "    def test_other_thing(self):\n"
 	  "        pass"))
@@ -267,22 +268,46 @@ vem is created."
      (find-file (testenv-test-file-path env))
      (setq abl-mode-ve-create-command (concat "cd " output-dir " && touch %s"))
      (abl-mode-exec-command "ls")
-     (file-exists-p (abl-mode-concat-paths output-dir "test-ve"))))))
+     (sleep-for 1)
+     (file-exists-p (abl-mode-concat-paths output-dir "test-ve"))
+     ))))
 
 
 (ert-deftest test-running-tests ()
   (abl-git-test
    (find-file (testenv-test-file-path env))
-   (goto-char (point-min))
-   (replace-string "OUTPUTPATH" (testenv-proof-file env))
-   (replace-string "TXTOUTPUT" "blah blah")
-   (save-buffer)
-   (setq abl-mode-check-and-activate-ve nil)
-   (abl-mode-run-test-at-point)
-   (sleep-for 1)
-   (should (file-exists-p (testenv-proof-file env)))
-   (should (string-equal (read-from-file (testenv-proof-file env))
-			 "blah blah"))))
+   (let ((shell-name abl-mode-shell-name))
+     (goto-char (point-min))
+     (replace-string "OUTPUTPATH" (testenv-proof-file env))
+     (replace-string "TXTOUTPUT" "blah blah")
+     (save-buffer)
+     (setq abl-mode-check-and-activate-ve nil)
+     (abl-mode-run-test-at-point)
+     ;; we need this because the next check runs right after the command is fired
+     (while (abl-shell-busy shell-name) (sleep-for 1))
+     (should (file-exists-p (testenv-proof-file env)))
+     (should (string-equal (read-from-file (testenv-proof-file env))
+			   "blah blah")))))
+
+
+(ert-deftest test-replacement-ve ()
+  (let ((output-dir (make-temp-file "testout" 't))
+	(ve-dir (make-temp-file "ves" 't))
+	(collected-msgs '())
+	(replacement-ve-name "test-ve"))
+    (write-to-file (abl-mode-concat-paths ve-dir replacement-ve-name) "blah")
+    (flet ((read-from-minibuffer (msg)
+	    (setq collected-msgs (append collected-msgs (list msg)))
+	    "test-ve"))
+      (abl-git-test
+       (find-file (testenv-test-file-path env))
+       (setq abl-mode-ve-activate-command
+	     (concat "cd " output-dir " && touch %s"))
+       (setq abl-mode-ve-base-dir ve-dir)
+       (abl-mode-exec-command "ls")
+       (sleep-for 1)
+       (should (file-exists-p (abl-mode-concat-paths output-dir "test-ve")))
+))))
 
 ;; (ert-deftest test-replacement-vem ()
 ;;   (abl-git-test
