@@ -151,7 +151,11 @@ vem is created."
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha") "haha"))
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha/") "haha"))
   (should (string-equal (abl-mode-last-path-comp "/hehe/haha.py") "haha.py"))
-  (should (not (abl-mode-last-path-comp ""))))
+  (should (not (abl-mode-last-path-comp "")))
+  (should (abl-mode-starts-with "test" "te"))
+  (should (abl-mode-starts-with "" ""))
+  (should (not (abl-mode-starts-with "blah" "te"))))
+
 
 (ert-deftest test-cvs-utils ()
   (let* ((git-dir (make-temp-file "" 't))
