@@ -46,10 +46,10 @@
 	  (setq abl-mode-branch-base project-base)
 	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
-	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				     abl-mode-project-name
 				     abl-mode-branch))
+	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (abl-mode-local-options project-base)))))
 
 (defun abl-mode-hook ()
@@ -147,8 +147,7 @@
 (defvar abl-mode-last-test-run nil
   "Last test run and which branch it was")
 
-(defvar abl-mode-replacement-vems '())
-
+(defvar abl-mode-replacement-vems (make-hash-table :test 'equal))
 
 (defvar abl-mode-shell-child-cmd
   (if (eq system-type 'darwin)
@@ -333,7 +332,7 @@ branch. If no vcs, "
   (let ((branch-name (or branch abl-mode-branch))
 	(prjct-name (or project abl-mode-project-name)))
     (or
-     (cdr (assoc branch-name abl-mode-replacement-vems))
+     (gethash abl-mode-shell-name abl-mode-replacement-vems nil)
      (concat prjct-name "_"
 	     (replace-regexp-in-string "/" "-" branch-name)))))
 
@@ -388,25 +387,25 @@ running using ps."
     (select-window code-window)))
 
 
-(defun abl-mode-ve-name-or-create (name)
+(defun abl-mode-ve-name-or-create (name &optional is-replacement)
   (if (not abl-mode-check-and-activate-ve)
       (cons nil nil)
-    (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
-      (if replacement-vem
-	  (cons replacement-vem nil)
-	(let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
-	  (if (file-exists-p vem-path)
-	      (cons name nil)
-	    (let*
-		((command-string
-		  (format
-		   "No virtualenv %s; y to create it, or name of existing to use instead: "
-		   name))
-		 (vem-or-y (read-from-minibuffer command-string))
-		 (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	      (if create-new
-		  (cons name create-new)
-		(abl-mode-ve-name-or-create vem-or-y)))))))))
+    (let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
+      (if (file-exists-p vem-path)
+	  (progn (puthash
+		  abl-mode-shell-name
+		  name
+		  abl-mode-replacement-vems)
+		 (cons name nil))
+	(let* ((command-string
+		(format
+		 "No virtualenv %s; y to create it, or name of existing to use instead: "
+		 name))
+	     (vem-or-y (read-from-minibuffer command-string))
+	     (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	  (if create-new
+	      (cons name create-new)
+	    (abl-mode-ve-name-or-create vem-or-y 't)))))))
 
 ;; <<------------  Running the server and tests  -------->>
 

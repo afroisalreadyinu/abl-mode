@@ -102,7 +102,7 @@
   (abl-mode-last-path-comp (directory-file-name (testenv-base-dir env))))
 
 (defun testenv-proof-file (env)
-  (abl-mode-concat-paths (testenv-proof-dir env) "out.txt"))
+  (abl-mode-concat-paths (testenv-proof-dir env) "out"))
 
 (defun testenv-branch-git (env branch-name)
   (shell-command-to-string (format
@@ -323,11 +323,14 @@ vem is created."
        (setq abl-mode-ve-activate-command
 	     (concat "cd " output-dir " && echo 't' >> %s"))
        (setq abl-mode-ve-base-dir ve-dir)
-       (abl-mode-exec-command "ls")
+       (save-excursion (abl-mode-exec-command "ls"))
        (sleep-for 1)
        (should (file-exists-p ve-out-file))
        (should (= (character-count ve-out-file "t") 1))
        (should (= (length collected-msgs) 1))
+       (should (string-equal (gethash abl-mode-shell-name
+				      abl-mode-replacement-vems nil)
+			     replacement-ve-name))
 
        (let ((new-test-file-path
 	      (replace-regexp-in-string
@@ -339,9 +342,10 @@ vem is created."
 	 (setq abl-mode-ve-base-dir ve-dir)
 	 (abl-mode-exec-command "ls")
 	 (sleep-for 1)
-	 (should (= (character-count ve-out-file "t") 2)))
-))))
+	 (should (= (character-count ve-out-file "t") 2))
+	 (should (= (length collected-msgs) 1))
+)))))
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert t)
+(ert 't)
