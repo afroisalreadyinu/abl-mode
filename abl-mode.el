@@ -46,10 +46,10 @@
 	  (setq abl-mode-branch-base project-base)
 	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
-	  (setq abl-mode-ve-name (abl-mode-get-vem-name))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
 				     abl-mode-project-name
 				     abl-mode-branch))
+	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (abl-mode-local-options project-base)))))
 
 (defun abl-mode-hook ()
@@ -85,7 +85,7 @@
   "The command for activating a virtual environment")
 (make-variable-buffer-local 'abl-mode-ve-create-command)
 
-(defcustom abl-mode-test-command "nosetests -s %s"
+(defcustom abl-mode-test-command "python -m unittest %s"
   "The command for running tests")
 (make-variable-buffer-local 'abl-mode-test-command)
 
@@ -108,6 +108,10 @@
 (defcustom abl-mode-test-file-regexp ".*_tests.py"
 "regexp used to check whether a file is a test file")
 (make-variable-buffer-local 'abl-mode-test-file-regexp)
+
+(defcustom abl-mode-test-path-module-class-separator "."
+"regexp used to check whether a file is a test file")
+(make-variable-buffer-local 'abl-mode-test-path-module-class-separator)
 
 (defcustom abl-mode-code-file-tests-regexps
   '("^\"\"\"[^(\"\"\")]*\\(^tests:\\)" "^'''[^(''')]*\\(^tests:\\)")
@@ -148,7 +152,7 @@
 (defvar abl-mode-last-test-run nil
   "Last test run and which branch it was")
 
-(defvar abl-mode-replacement-vems '())
+(defvar abl-mode-replacement-vems (make-hash-table :test 'equal))
 
 (defvar abl-mode-last-shell-points (make-hash-table :test 'equal))
 
@@ -164,9 +168,11 @@
 ;; <<------------- Helpers  ------------->>
 
 (defun abl-mode-starts-with (str1 str2)
-  (and (> (length str1) 0)
-       (string= str2
-		(substring str1 0 (length str2)))))
+  "Does str1 start with str2?"
+  (if (> (length str1) 0)
+      (string= str2
+	       (substring str1 0 (length str2)))
+    (= (length str2) 0)))
 
 (defun abl-mode-ends-with (str1 str2)
   "Does str1 end with str2?"
@@ -298,12 +304,21 @@ return str"
       (substring git-output (match-beginning 1) (match-end 1)))))
 
 
+(defun abl-mode-get-svn-branch-name (base-dir)
+  (let* ((project-base (locate-dominating-file (abl-mode-concat-paths base-dir) ".svn")))
+    (if (not project-base (error "SVN branch name of non-svn repo could not be found")))
+    (abl-mode-last-path-comp project-base)))
+
+
 (defun abl-mode-branch-name (path)
+  "If svn, name of directory in which .svn resides. If git, git
+branch. If no vcs, "
   (if (string= path "/")
       nil
     (let ((vcs (abl-mode-git-or-svn path)))
-      (cond ((or (not vcs) (string-equal vcs "svn"))
-	     (abl-mode-last-path-comp path))
+      (cond ((not vcs) (abl-mode-last-path-comp path))
+	    ((string-equal vcs "svn")
+	     (abl-mode-get-svn-branch-name path))
 	    ((string-equal vcs "git")
 	     (abl-mode-get-git-branch-name path))
 	    (t nil)))))
@@ -315,17 +330,18 @@ return str"
   (if (string= path "/")
       nil
     (let ((vcs (abl-mode-git-or-svn path)))
-      (cond ((or (not vcs) (string-equal vcs "svn"))
+      (cond ((not vcs) (abl-mode-last-path-comp path))
+	    ((string-equal vcs "svn")
 	     (abl-mode-last-path-comp (abl-mode-higher-dir path)))
 	    ((string-equal vcs "git")
 	     (abl-mode-last-path-comp path))
 	    (t nil)))))
 
-(defun abl-mode-get-vem-name (&optional branch project)
+(defun abl-mode-get-ve-name (&optional branch project)
   (let ((branch-name (or branch abl-mode-branch))
 	(prjct-name (or project abl-mode-project-name)))
     (or
-     (cdr (assoc branch-name abl-mode-replacement-vems))
+     (gethash abl-mode-shell-name abl-mode-replacement-vems nil)
      (concat prjct-name "_"
 	     (replace-regexp-in-string "/" "-" branch-name)))))
 
@@ -335,10 +351,10 @@ return str"
   (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
 
 
-(defun abl-shell-busy ()
+(defun abl-shell-busy (&optional shell-name)
   "Find out whether the shell has any child processes
 running using ps."
-  (let ((abl-shell-buffer (get-buffer abl-mode-shell-name)))
+  (let ((abl-shell-buffer (get-buffer (or shell-name abl-mode-shell-name))))
     (if (not abl-shell-buffer)
 	nil
       (let* ((shell-process-id (process-id (get-buffer-process abl-shell-buffer)))
@@ -405,25 +421,25 @@ map for latest test run output."
     (select-window code-window)))
 
 
-(defun abl-mode-ve-name-or-create (name)
+(defun abl-mode-ve-name-or-create (name &optional is-replacement)
   (if (not abl-mode-check-and-activate-ve)
       (cons nil nil)
-    (let ((replacement-vem (cdr (assoc name abl-mode-replacement-vems))))
-      (if replacement-vem
-	  (cons replacement-vem nil)
-	(let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
-	  (if (file-exists-p vem-path)
-	      (cons name nil)
-	    (let*
-		((command-string
-		  (format
-		   "No virtualenv %s; y to create it, or name of existing to use instead: "
-		   name))
-		 (vem-or-y (read-from-minibuffer command-string))
-		 (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
-	      (if create-new
-		  (cons name create-new)
-		(abl-mode-ve-name-or-create vem-or-y)))))))))
+    (let ((vem-path (expand-file-name name abl-mode-ve-base-dir)))
+      (if (file-exists-p vem-path)
+	  (progn (puthash
+		  abl-mode-shell-name
+		  name
+		  abl-mode-replacement-vems)
+		 (cons name nil))
+	(let* ((command-string
+		(format
+		 "No virtualenv %s; y to create it, or name of existing to use instead: "
+		 name))
+	     (vem-or-y (read-from-minibuffer command-string))
+	     (create-new (or (string-equal vem-or-y "y") (string-equal vem-or-y "Y"))))
+	  (if create-new
+	      (cons name create-new)
+	    (abl-mode-ve-name-or-create vem-or-y 't)))))))
 
 ;; <<------------  Running the server and tests  -------->>
 
@@ -476,9 +492,9 @@ followed by a proper class name).")
 (defun abl-mode-get-test-function-path (file-path)
   (let ((function-name (abl-mode-determine-test-function-name)))
     (if (not (abl-mode-test-in-class))
-	(concat file-path ":" function-name)
+	(concat file-path abl-mode-test-path-module-class-separator function-name)
       (let ((class-name (abl-mode-determine-test-class-name)))
-	(concat file-path ":" class-name "." function-name)))))
+	(concat file-path abl-mode-test-path-module-class-separator class-name "." function-name)))))
 
 
 (defun abl-mode-run-test (test-path &optional branch-name)
@@ -530,12 +546,14 @@ if none of these is true."
 		(save-excursion
 		  (re-search-backward "^class *" nil t))))
 	  (cond
-	 ((not (or test-func-pos test-class-pos))
-	  (error "You are neither in a test class nor a test function."))
-	 ((and test-func-pos
-	       (and test-class-pos (< test-class-pos test-func-pos)))
-	  (abl-mode-get-test-function-path file-path))
-	 (test-class-pos (concat file-path ":" (abl-mode-determine-test-class-name)))))))))
+	   ((not (or test-func-pos test-class-pos))
+	    (error "You are neither in a test class nor a test function."))
+	   ((and test-func-pos
+		 (and test-class-pos (< test-class-pos test-func-pos)))
+	    (abl-mode-get-test-function-path file-path))
+	   (test-class-pos (concat file-path
+				   abl-mode-test-path-module-class-separator
+				   (abl-mode-determine-test-class-name)))))))))
 
 
 (defun abl-mode-run-test-at-point ()

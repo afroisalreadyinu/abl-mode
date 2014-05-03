@@ -26,7 +26,7 @@ Installing
 To install abl-mode, put abl.el on your elisp path, and include the
 following in your emacs configuration file::
 
-   (require 'abl)
+   (require 'abl-mode)
 
 If you want to activate abl-mode automatically for python files, add
 the following to your Emacs configuration::
