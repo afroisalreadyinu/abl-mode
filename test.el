@@ -40,6 +40,16 @@
   (if (not (file-exists-p dir))
       (make-directory dir)))
 
+(defun character-count (path char)
+  (let ((count 0))
+    (save-excursion
+      (find-file path)
+      (goto-char (point-min))
+      (setq count (count-matches "t"))
+      (kill-buffer))
+    count))
+(character-count "/Users/ulas/temp/yada.txt" "t")
+
 (cl-defstruct (testenv
 	       (:constructor new-testenv
 			     (base-dir
@@ -299,10 +309,11 @@ vem is created."
 
 
 (ert-deftest test-replacement-ve ()
-  (let ((output-dir (make-temp-file "testout" 't))
-	(ve-dir (make-temp-file "ves" 't))
-	(collected-msgs '())
-	(replacement-ve-name "test-ve"))
+  (let* ((output-dir (make-temp-file "testout" 't))
+	 (ve-dir (make-temp-file "ves" 't))
+	 (collected-msgs '())
+	 (replacement-ve-name "test-ve")
+	 (ve-out-file (abl-mode-concat-paths output-dir replacement-ve-name)))
     (write-to-file (abl-mode-concat-paths ve-dir replacement-ve-name) "blah")
     (flet ((read-from-minibuffer (msg)
 	    (setq collected-msgs (append collected-msgs (list msg)))
@@ -310,43 +321,26 @@ vem is created."
       (abl-git-test
        (find-file (testenv-test-file-path env))
        (setq abl-mode-ve-activate-command
-	     (concat "cd " output-dir " && touch %s"))
+	     (concat "cd " output-dir " && echo 't' >> %s"))
        (setq abl-mode-ve-base-dir ve-dir)
        (abl-mode-exec-command "ls")
        (sleep-for 1)
-       (should (file-exists-p (abl-mode-concat-paths output-dir "test-ve")))
+       (should (file-exists-p ve-out-file))
+       (should (= (character-count ve-out-file "t") 1))
+       (should (= (length collected-msgs) 1))
+
+       (let ((new-test-file-path
+	      (replace-regexp-in-string
+	       "project_tests" "other_tests" (testenv-test-file-path env))))
+	 (copy-file (testenv-test-file-path env) new-test-file-path)
+	 (find-file new-test-file-path)
+	 (setq abl-mode-ve-activate-command
+	       (concat "cd " output-dir " && echo 't' >> %s"))
+	 (setq abl-mode-ve-base-dir ve-dir)
+	 (abl-mode-exec-command "ls")
+	 (sleep-for 1)
+	 (should (= (character-count ve-out-file "t") 2)))
 ))))
-
-;; (ert-deftest test-replacement-vem ()
-;;   (abl-git-test
-;;     (commit-git base-dir)
-;;     (let* ((abl-values (abl-values-for-path test-file-path))
-;; 	   (master-vemname (nth 4 abl-values))
-;; 	   (new-branch "gitbranch")
-;; 	   (branch-vemname (concat project-name "_" new-branch))
-;; 	   (test-buff (find-file test-file-path)))
-;;       (goto-char (point-max))
-;;       (setq abl-mode-vems-base-dir (make-temp-file "vems" 't))
-;;       (shell-command-to-string (format "virtualenv %s"
-;; 				       (abl-mode-concat-paths abl-mode-vems-base-dir master-vemname)))
-;;       (should (= 0 (length abl-mode-replacement-vems)))
-
-;;       (branch-git base-dir new-branch)
-;;       (setq abl-mode-replacement-vems (list (cons branch-vemname master-vemname)))
-;;       (setq abl-mode-vem-activate-command (concat "echo '%s' > " vem-proof-file-path))
-
-;;       (revert-buffer test-buff t nil)
-;;       (goto-char (point-max))
-;;       (abl-mode-run-test-at-point)
-;;       (sleep-for 1)
-;;       (should (file-exists-p vem-proof-file-path))
-;;       (save-excursion
-;; 	(find-file vem-proof-file-path)
-;; 	(should (string= (buffer-substring (point-min) (- (point-max) 1))
-;; 			 master-vemname)))
-
-;;       (cleanup abl-mode-vems-base-dir)
-;;       )))
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
