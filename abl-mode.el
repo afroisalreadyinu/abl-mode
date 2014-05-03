@@ -160,6 +160,7 @@
 ;; <<------------- Helpers  ------------->>
 
 (defun abl-mode-starts-with (str1 str2)
+  "Does str1 start with str2?"
   (and (> (length str1) 0)
        (string= str2
 		(substring str1 0 (length str2)))))

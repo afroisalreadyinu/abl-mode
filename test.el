@@ -21,16 +21,12 @@
 (defvar output-file-path "/tmp/tc.txt")
 (defvar proof-file-name "out.txt")
 (defvar test-file-content
-  (concat "import os,unittest\n"
+  (concat "import unittest\n"
 	  "\n"
 	  "class AblTest(unittest.TestCase):\n"
 	  "#marker\n"
 	  "    def test_abl_mode(self):\n"
-	  "        f = open('OUTPUTPATH', 'w')\n"
-	  "        f.write('TXTOUTPUT')\n"
-	  "        f.flush()\n"
-	  "        f.close()\n"
-	  "        os.fsync()\n"
+	  "        self.fail('A FAILING TEST')\n"
 	  "\n"
 	  "    def test_other_thing(self):\n"
 	  "        pass"))
@@ -257,7 +253,7 @@ vem is created."
    (search-forward "marker")
    (should (string-equal (abl-mode-get-test-entity)
 			 "aproject.project_tests.AblTest"))
-   (search-forward "f.write")
+   (search-forward "self.fail")
    (should (string-equal (abl-mode-get-test-entity)
 			 "aproject.project_tests.AblTest.test_abl_mode"))
    (search-forward "pass")
@@ -282,22 +278,20 @@ vem is created."
      (file-exists-p (abl-mode-concat-paths output-dir "test-ve"))
      ))))
 
-
 (ert-deftest test-running-tests ()
   (abl-git-test
    (find-file (testenv-test-file-path env))
    (let ((shell-name abl-mode-shell-name))
-     (goto-char (point-min))
-     (replace-string "OUTPUTPATH" (testenv-proof-file env))
-     (replace-string "TXTOUTPUT" "blah blah")
-     (save-buffer)
      (setq abl-mode-check-and-activate-ve nil)
      (abl-mode-run-test-at-point)
      ;; we need this because the next check runs right after the command is fired
+     (sleep-for 1)
      (while (abl-shell-busy shell-name) (sleep-for 1))
-     (should (file-exists-p (testenv-proof-file env)))
-     (should (string-equal (read-from-file (testenv-proof-file env))
-			   "blah blah")))))
+     (let ((shell-buffer (get-buffer shell-name)))
+       (should shell-buffer)
+       (goto-char (point-min))
+       (should (search-forward "A FAILING TEST" nil t))
+     ))))
 
 
 (ert-deftest test-replacement-ve ()
