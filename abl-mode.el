@@ -29,6 +29,7 @@
 ;; shell buffers. Please see README.rst for details.
 
 ;; <<--------- The necessary minor-mode stuff  ---------->>
+(eval-when-compile (require 'cl))
 
 (defvar abl-mode nil
   "Mode variable for abl-mode")
@@ -367,7 +368,7 @@ running using ps."
       (string-to-number (match-string 1 test-output))
     0))
 
-(defstruct (abl-testrun-output
+(cl-defstruct (abl-testrun-output
 	    (:constructor new-testrun-output
 			  (text &optional (failed (abl-mode-failed-count text)))))
   text failed)
