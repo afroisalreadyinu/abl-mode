@@ -220,6 +220,11 @@ vem is created."
 			   (buffer-local-value 'abl-mode-project-name test-buffer)))
       (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
 			    (concat (testenv-base-dirname env) "_master")))
+      (should (string-equal (buffer-local-value
+			     'abl-mode-shell-name test-buffer)
+			    (concat abl-mode-branch-shell-prefix
+				    (testenv-base-dirname env)
+				    "_master")))
 )))
 
 
@@ -236,6 +241,11 @@ vem is created."
 			   (buffer-local-value 'abl-mode-project-name test-buffer)))
       (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
 			    (concat (testenv-base-dirname env) "_gitbranch")))
+      (should (string-equal (buffer-local-value
+			     'abl-mode-shell-name test-buffer)
+			    (concat abl-mode-branch-shell-prefix
+				    (testenv-base-dirname env)
+				    "_gitbranch")))
 )))
 
 (ert-deftest test-test-at-point ()
