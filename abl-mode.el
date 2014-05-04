@@ -368,9 +368,10 @@ running using ps."
     0))
 
 (defun abl-mode-success-count (test-output failed)
-  (string-match "Ran \\([0-9]*\\) tests in" test-output)
-  (let ((total-test-count (string-to-number (match-string 1 test-output))))
-    (- total-test-count failed)))
+  (if (string-match "Ran \\([0-9]*\\) test\\(s\\)? in" test-output)
+      (let ((total-test-count (string-to-number (match-string 1 test-output))))
+	(- total-test-count failed))
+    0))
 
 (cl-defstruct
     (abl-testrun-output
