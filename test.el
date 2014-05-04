@@ -29,7 +29,10 @@
 	  "        self.fail('A FAILING' +' TEST')\n"
 	  "\n"
 	  "    def test_other_thing(self):\n"
-	  "        pass"))
+	  "        pass"
+	  "\n"
+	  "    def test_one_more_thing(self):\n"
+	  "        self.fail()"))
 
 (defvar setup-content
   (concat "from setuptools import setup\n"
@@ -314,6 +317,23 @@ vem is created."
        (goto-char (point-min))
        (should (search-forward "A FAILING TEST" nil t))
      ))))
+
+(ert-deftest test-test-run-output-parsing ()
+  (abl-git-test
+   (find-file (testenv-test-file-path env))
+   (let ((shell-name abl-mode-shell-name))
+     (setq abl-mode-check-and-activate-ve nil)
+     (goto-char (point-min))
+     (abl-mode-run-test-at-point)
+     ;; we need this because the next check runs right after the command is fired
+     (sleep-for 1)
+     (while (abl-shell-busy shell-name) (sleep-for 1))
+     ;; and this one is so that the shell outputis processed
+     (sleep-for 1)
+     (switch-to-buffer (get-buffer "*Messages*"))
+     (goto-char (point-min))
+     (should (search-forward "Tests failed: 2" nil t))
+)))
 
 
 (ert-deftest test-replacement-ve ()
