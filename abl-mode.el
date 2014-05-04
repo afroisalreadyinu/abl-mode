@@ -612,7 +612,6 @@ opens the package and navigates to the method."
 	  (if class-name (search-forward (concat "class " class-name)))
 	  (if func-name (search-forward (concat "def " func-name))))))))
 
-
 (defun abl-mode-start-python ()
   (interactive)
   (ansi-term
