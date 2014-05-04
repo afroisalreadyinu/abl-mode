@@ -677,7 +677,6 @@ import module and print its __file__ attribute."
 ;; - parse output, list failed tests
 ;; - go to a/next test that failed
 ;; - rerun last failed
-;; - turn replacement vems into hash table
 ;; - import something from one of the open files (or repeat existing import)
 ;;      - when abl-mode is initialized on a file, find the imports, add to list if new
 ;;      - add command to insert an import
