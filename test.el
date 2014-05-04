@@ -2,6 +2,8 @@
 ;; emacs -q -L . -l test.el --batch
 ;; with earlier emacs versions:
 ;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
+;; in both, replace test.el with just test if you want emacs use byte-compiled
+;; files, which is considerably faster
 
 (require 'abl-mode)
 (require 'ert)
