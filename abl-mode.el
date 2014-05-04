@@ -572,9 +572,10 @@ if none of these is true."
 
 (defun abl-mode-rerun-last-test ()
   (interactive)
-  (if (not abl-mode-last-test-run)
-      (message "You haven't run any tests yet.")
-    (abl-mode-run-test (car abl-mode-last-test-run) (cdr abl-mode-last-test-run))))
+  (let ((last-run (gethash abl-mode-shell-name abl-mode-last-tests-run)))
+    (if (not last-run)
+	(message "You haven't run any tests yet.")
+      (abl-mode-run-test last-run))))
 
 
 (defun abl-mode-parse-python-path (python-path)

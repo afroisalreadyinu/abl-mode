@@ -316,17 +316,34 @@ vem is created."
        (should shell-buffer)
        (goto-char (point-min))
        (should (search-forward "A FAILING TEST" nil t))
+       (goto-char (point-min))
+       (should (= (count-matches "A FAILING TEST") 1))
      ))))
 
 (ert-deftest test-rerun-last ()
   (abl-git-test
    (find-file (testenv-test-file-path env))
-   (let ((shell-name abl-mode-shell-name))
+   (let ((shell-name abl-mode-shell-name)
+	 (new-test-file-path
+	      (replace-regexp-in-string
+	       "project_tests" "other_tests" (testenv-test-file-path env))))
      (setq abl-mode-check-and-activate-ve nil)
      (abl-mode-run-test-at-point)
      (sleep-for 1)
      (while (abl-shell-busy shell-name) (sleep-for 1))
-     (should (gethash shell-name abl-mode-last-tests-run)))))
+     (should (gethash shell-name abl-mode-last-tests-run))
+     (goto-char (point-min))
+     (should (= (count-matches "A FAILING TEST") 1))
+
+     (copy-file (testenv-test-file-path env) new-test-file-path)
+     (find-file new-test-file-path)
+     (setq abl-mode-check-and-activate-ve nil)
+     (abl-mode-rerun-last-test)
+     (sleep-for 1)
+     (while (abl-shell-busy shell-name) (sleep-for 1))
+     (goto-char (point-min))
+     (should (= (count-matches "A FAILING TEST") 2))
+)))
 
 
 (ert-deftest test-test-run-output-parsing ()
@@ -392,4 +409,4 @@ vem is created."
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert 't)
+(ert 't);est-rerun-last)
