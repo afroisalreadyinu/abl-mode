@@ -150,14 +150,13 @@
   "The name of the project. ")
 (make-variable-buffer-local 'abl-mode-project-name)
 
-(defvar abl-mode-last-test-run nil
-  "Last test run and which branch it was")
-
 (defvar abl-mode-replacement-vems (make-hash-table :test 'equal))
 
 (defvar abl-mode-last-shell-points (make-hash-table :test 'equal))
 
-(defvar abl-mode-last-test-output (make-hash-table :test 'equal))
+(defvar abl-mode-last-tests-run (make-hash-table :test 'equal))
+
+(defvar abl-mode-last-tests-output (make-hash-table :test 'equal))
 
 (defvar abl-mode-shell-child-cmd
   (if (eq system-type 'darwin)
@@ -389,7 +388,7 @@ map for latest test run output."
 	     (new-testrun-output (buffer-substring-no-properties
 				  (gethash (buffer-name) abl-mode-last-shell-points)
 				  (point)))))
-	(puthash (buffer-name) testrun-output abl-mode-last-test-output)
+	(puthash (buffer-name) testrun-output abl-mode-last-tests-output)
 	(if (> (abl-testrun-output-failed testrun-output) 0)
 	    (message (format "Tests failed: %d" (abl-testrun-output-failed testrun-output)))))))
 
@@ -512,7 +511,9 @@ followed by a proper class name).")
 	   (real-branch-name (or branch-name abl-mode-branch)))
       (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
       (abl-mode-exec-command shell-command)
-      (setq abl-mode-last-test-run (cons test-path abl-mode-branch)))))
+      (puthash abl-mode-shell-name
+	       test-path
+	       abl-mode-last-tests-run))))
 
 (defun abl-mode-test-for-code-file ()
   "Look for a 'tests: ' header in a python code file. This
