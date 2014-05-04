@@ -26,7 +26,7 @@
 	  "class AblTest(unittest.TestCase):\n"
 	  "#marker\n"
 	  "    def test_abl_mode(self):\n"
-	  "        self.fail('A FAILING TEST')\n"
+	  "        self.fail('A FAILING' +' TEST')\n"
 	  "\n"
 	  "    def test_other_thing(self):\n"
 	  "        pass"))
@@ -274,6 +274,14 @@ vem is created."
    (should (string-equal (abl-mode-get-test-entity)
 			 "aproject.project_tests.AblTest.test_other_thing"))
 ))
+
+(ert-deftest test-dot-file ()
+  (abl-git-test
+   (write-to-file (abl-mode-concat-paths (testenv-base-dir env) ".abl")
+		  "abl-mode-ve-name \"VENAME\"\nabl-mode-shell-name \"SHELLNAME\"")
+   (find-file (testenv-test-file-path env))
+   (should (string-equal abl-mode-ve-name "VENAME"))
+   (should (string-equal abl-mode-shell-name "SHELLNAME"))))
 
 (ert-deftest test-ve-check-and-activation ()
   (let ((collected-msgs '())
