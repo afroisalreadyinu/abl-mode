@@ -368,15 +368,22 @@ running using ps."
       (string-to-number (match-string 1 test-output))
     0))
 
-(cl-defstruct (abl-testrun-output
-	    (:constructor new-testrun-output
-			  (text &optional (failed (abl-mode-failed-count text)))))
-  text failed)
+(defun abl-mode-success-count (test-output failed)
+  (string-match "Ran \\([0-9]*\\) tests in" test-output)
+  (let ((total-test-count (string-to-number (match-string 1 test-output))))
+    (- total-test-count failed)))
+
+(cl-defstruct
+    (abl-testrun-output
+     (:constructor new-testrun-output
+		   (text &optional (failed (abl-mode-failed-count text))
+			 (successful (abl-mode-success-count text failed)))))
+  text failed successful)
 
 (defun abl-shell-mode-output-filter (line)
-  "If line is the closing line of a test output, copy from the
-last marked point, create a testrun-output struct and put in the
-hash map for latest test run output."
+  "If line is the closing line of a test output, copy from the last
+marked point, create a testrun-output struct and put in the hash
+map for latest test run output."
   (if (string-match abl-mode-end-testrun-re line)
       (let ((testrun-output
 	     (new-testrun-output (buffer-substring-no-properties

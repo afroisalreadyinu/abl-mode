@@ -333,6 +333,11 @@ vem is created."
      (switch-to-buffer (get-buffer "*Messages*"))
      (goto-char (point-min))
      (should (search-forward "Tests failed: 2" nil t))
+     (let ((last-run-info (gethash shell-name
+				   abl-mode-last-test-output nil)))
+       (should last-run-info)
+       (should (= (abl-testrun-output-failed last-run-info) 2))
+       (should (= (abl-testrun-output-successful last-run-info) 1)))
 )))
 
 
