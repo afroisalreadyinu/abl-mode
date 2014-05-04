@@ -387,10 +387,18 @@ map for latest test run output."
       (let ((testrun-output
 	     (new-testrun-output (buffer-substring-no-properties
 				  (gethash (buffer-name) abl-mode-last-shell-points)
-				  (point)))))
+				  (point-max)))))
 	(puthash (buffer-name) testrun-output abl-mode-last-tests-output)
-	(if (> (abl-testrun-output-failed testrun-output) 0)
-	    (message (format "Tests failed: %d" (abl-testrun-output-failed testrun-output)))))))
+	(message
+	 (concat
+	  "Test run: "
+	  (if (> (abl-testrun-output-failed testrun-output) 0)
+	      (format "FAILED: %d" (abl-testrun-output-failed testrun-output))
+	    "")
+	  (if (> (abl-testrun-output-successful testrun-output) 0)
+	      (format " SUCCESS: %d" (abl-testrun-output-successful testrun-output))
+	    ""))))))
+
 
 (defun abl-mode-exec-command (command)
   (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
