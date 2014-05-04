@@ -374,9 +374,9 @@ running using ps."
   text failed)
 
 (defun abl-shell-mode-output-filter (line)
-"If line is the closing line of a test output, copy from the last
-marked point, create a testrun-output struct and put in the hash
-map for latest test run output."
+  "If line is the closing line of a test output, copy from the
+last marked point, create a testrun-output struct and put in the
+hash map for latest test run output."
   (if (string-match abl-mode-end-testrun-re line)
       (let ((testrun-output
 	     (new-testrun-output (buffer-substring-no-properties
