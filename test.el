@@ -318,6 +318,16 @@ vem is created."
        (should (search-forward "A FAILING TEST" nil t))
      ))))
 
+(ert-deftest test-rerun-last ()
+  (abl-git-test
+   (find-file (testenv-test-file-path env))
+   (let ((shell-name abl-mode-shell-name))
+     (setq abl-mode-check-and-activate-ve nil)
+     (abl-mode-run-test-at-point)
+     (sleep-for 1)
+     (while (abl-shell-busy shell-name) (sleep-for 1))
+     (should (gethash shell-name abl-mode-last-tests-run)))))
+
 
 (ert-deftest test-test-run-output-parsing ()
   (abl-git-test

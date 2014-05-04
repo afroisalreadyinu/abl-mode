@@ -508,10 +508,10 @@ followed by a proper class name).")
   (if (abl-shell-busy)
       (message "The shell is busy; please end the process before running a test")
     (let* ((shell-command (format abl-mode-test-command test-path))
-	   (real-branch-name (or branch-name abl-mode-branch)))
-      (message (format "Running test(s) %s on branch %s" test-path real-branch-name))
+	   (shell-name abl-mode-shell-name))
+      (message (format "Running test(s) %s on %s" test-path shell-name))
       (abl-mode-exec-command shell-command)
-      (puthash abl-mode-shell-name
+      (puthash shell-name
 	       test-path
 	       abl-mode-last-tests-run))))
 
