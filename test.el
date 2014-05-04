@@ -7,6 +7,8 @@
 (require 'ert)
 (require 'cl)
 
+(toggle-debug-on-error)
+
 (defun write-to-file (file-path string)
   (with-temp-buffer (insert string)
 		    (write-region (point-min) (point-max) file-path)))
@@ -309,11 +311,12 @@ vem is created."
    (let ((shell-name abl-mode-shell-name))
      (setq abl-mode-check-and-activate-ve nil)
      (abl-mode-run-test-at-point)
-     ;; we need this because the next check runs right after the command is fired
-     (sleep-for 1)
-     (while (abl-shell-busy shell-name) (sleep-for 1))
      (let ((shell-buffer (get-buffer shell-name)))
        (should shell-buffer)
+       (switch-to-buffer shell-buffer)
+       (while (not (progn (goto-char (point-min))
+			  (re-search-forward abl-mode-end-testrun-re nil t)))
+	 (sleep-for 1))
        (goto-char (point-min))
        (should (search-forward "A FAILING TEST" nil t))
        (goto-char (point-min))
@@ -360,7 +363,7 @@ vem is created."
      (sleep-for 1)
      (switch-to-buffer (get-buffer "*Messages*"))
      (goto-char (point-min))
-     (should (search-forward "Tests failed: 2" nil t))
+     (should (search-forward "FAILED: 2 SUCCESS: 1" nil t))
      (let ((last-run-info (gethash shell-name
 				   abl-mode-last-tests-output nil)))
        (should last-run-info)
@@ -409,4 +412,4 @@ vem is created."
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert 't);est-rerun-last)
+(ert 't)
