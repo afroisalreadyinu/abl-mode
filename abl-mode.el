@@ -446,6 +446,7 @@ map for latest test run output."
 		  abl-mode-shell-name
 		  name
 		  abl-mode-replacement-vems)
+		 (setq abl-mode-ve-name name)
 		 (cons name nil))
 	(let* ((command-string
 		(format
