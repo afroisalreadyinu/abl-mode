@@ -397,6 +397,7 @@ vem is created."
        (should (string-equal (gethash abl-mode-shell-name
 				      abl-mode-replacement-vems nil)
 			     replacement-ve-name))
+       (should (string-equal abl-mode-ve-name replacement-ve-name))
 
        (let ((new-test-file-path
 	      (replace-regexp-in-string
