@@ -111,7 +111,7 @@
 (make-variable-buffer-local 'abl-mode-test-file-regexp)
 
 (defcustom abl-mode-test-path-module-class-separator "."
-"regexp used to check whether a file is a test file")
+"character used to separate class name from module path. Alternative is ':'")
 (make-variable-buffer-local 'abl-mode-test-path-module-class-separator)
 
 (defcustom abl-mode-code-file-tests-regexps
