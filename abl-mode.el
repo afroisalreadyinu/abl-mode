@@ -67,7 +67,6 @@
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
     (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
     (define-key map (kbd "C-c m") 'abl-mode-open-module)
-    (define-key map (kbd "C-c s") 'abl-mode-start-python)
     map)
   "The keymap for abl-mode")
 
@@ -405,6 +404,7 @@ map for latest test run output."
   (let* ((new-or-name (abl-mode-ve-name-or-create abl-mode-ve-name))
 	 (ve-name (car new-or-name))
 	 (create-vem (cdr new-or-name))
+	 (shell-name abl-mode-shell-name)
 	 (commands
 	  (cond (create-vem (list (concat "cd " abl-mode-branch-base)
 				  (format abl-mode-ve-create-command ve-name)
@@ -416,7 +416,6 @@ map for latest test run output."
 		(t (list (concat "cd " abl-mode-branch-base)
 			 (format abl-mode-ve-activate-command ve-name)
 			 command))))
-	 (shell-name abl-mode-shell-name)
 	 (open-shell-buffer (get-buffer shell-name))
 	 (open-shell-window (if open-shell-buffer
 				(get-buffer-window-list shell-name nil t)
@@ -631,15 +630,6 @@ opens the package and navigates to the method."
 	  (if class-name (search-forward (concat "class " class-name)))
 	  (if func-name (search-forward (concat "def " func-name))))))))
 
-(defun abl-mode-start-python ()
-  (interactive)
-  (ansi-term
-   (expand-file-name "python"
-		     (abl-mode-concat-paths
-		      abl-mode-ve-base-dir
-		      abl-mode-ve-name
-		      "bin"))
-   (concat "Python " abl-mode-ve-name)))
 
 (defun abl-mode-python-thing-at-point ()
   "Find the identifier the cursor is on. Identifier can start
