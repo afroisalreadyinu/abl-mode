@@ -305,7 +305,8 @@ return str"
 
 (defun abl-mode-get-svn-branch-name (base-dir)
   (let* ((project-base (locate-dominating-file (abl-mode-concat-paths base-dir) ".svn")))
-    (if (not project-base (error "SVN branch name of non-svn repo could not be found")))
+    (if (not project-base)
+	(error "SVN branch name of non-svn repo could not be found"))
     (abl-mode-last-path-comp project-base)))
 
 
