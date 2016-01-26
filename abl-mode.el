@@ -31,6 +31,10 @@
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 (eval-when-compile (require 'cl))
 
+(defgroup abl-mode nil
+  "Python TDD minor mode."
+  :group 'python)
+
 (defvar abl-mode nil
   "Mode variable for abl-mode")
 (make-variable-buffer-local 'abl-mode)
