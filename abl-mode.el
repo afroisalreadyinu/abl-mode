@@ -39,6 +39,7 @@
   "Mode variable for abl-mode")
 (make-variable-buffer-local 'abl-mode)
 
+;;;###autoload
 (defun abl-mode (&optional arg)
   "abl minor mode"
   (interactive "P")
@@ -57,6 +58,7 @@
 	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (abl-mode-local-options project-base)))))
 
+;;;###autoload
 (defun abl-mode-hook ()
   (abl-mode))
 
