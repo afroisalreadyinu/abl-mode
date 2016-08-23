@@ -31,10 +31,15 @@
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 (eval-when-compile (require 'cl))
 
+(defgroup abl-mode nil
+  "Python TDD minor mode."
+  :group 'python)
+
 (defvar abl-mode nil
   "Mode variable for abl-mode")
 (make-variable-buffer-local 'abl-mode)
 
+;;;###autoload
 (defun abl-mode (&optional arg)
   "abl minor mode"
   (interactive "P")
@@ -53,6 +58,7 @@
 	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (abl-mode-local-options project-base)))))
 
+;;;###autoload
 (defun abl-mode-hook ()
   (abl-mode))
 
@@ -305,7 +311,8 @@ return str"
 
 (defun abl-mode-get-svn-branch-name (base-dir)
   (let* ((project-base (locate-dominating-file (abl-mode-concat-paths base-dir) ".svn")))
-    (if (not project-base (error "SVN branch name of non-svn repo could not be found")))
+    (if (not project-base)
+	(error "SVN branch name of non-svn repo could not be found"))
     (abl-mode-last-path-comp project-base)))
 
 
