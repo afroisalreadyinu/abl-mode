@@ -681,15 +681,11 @@ import module and print its __file__ attribute."
 
 
 ;; <<------------  TODOS -------------->>
-
-;; - open import (should also work on classes in code and libs)
+;; - tdd mode where tests are ran when files change
 ;; - add not changing directories through pwdx
 ;; for mac: function pwdx {
 ;;   lsof -a -p $1 -d cwd -n | tail -1 | awk '{print $NF}'
 ;; }
-;; - import something from one of the open files (or repeat existing import)
-;;      - when abl-mode is initialized on a file, find the imports, add to list if new
-;;      - add command to insert an import
 ;; - change abl-mode init to work also with files not inside the git dir (opened modules)
 ;; - moving back to shell window if it has a pdb?
 
