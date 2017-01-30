@@ -688,7 +688,9 @@ import module and print its __file__ attribute."
 
 
 ;; <<------------  TODOS -------------->>
+;; - intelligent filtering of test files; do not complain when file does not fit regexp
 ;; - tdd mode where tests are ran when files change
+;; - improve test infrastructure
 ;; - add not changing directories through pwdx
 ;; for mac: function pwdx {
 ;;   lsof -a -p $1 -d cwd -n | tail -1 | awk '{print $NF}'
