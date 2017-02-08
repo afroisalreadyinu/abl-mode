@@ -531,22 +531,6 @@ followed by a proper class name).")
 	       test-path
 	       abl-mode-last-tests-run))))
 
-(defun abl-mode-test-for-code-file ()
-  "Look for a 'tests: ' header in a python code file. This
-function is a bit convoluted because I prefer a longish function
-to a mind-bending regular expression. Especially in elisp."
-  (save-excursion
-    (goto-char (point-min))
-    (let ((tests-list-start nil)
-	  (regexp-list abl-mode-code-file-tests-regexps))
-      (while (and regexp-list (not tests-list-start))
-	(setq tests-list-start (re-search-forward (car regexp-list) nil t))
-	(setq regexp-list (cdr regexp-list)))
-      (if (not tests-list-start)
-	  nil
-	(goto-char tests-list-start)
-	(chomp (buffer-substring tests-list-start (line-end-position)))))))
-
 
 (defun abl-mode-get-test-entity ()
   "Which tests should be run? If this is a test file, depending
@@ -554,31 +538,24 @@ on where the cursor is, test whole file, class, or test
 method. Otherwise, look for a header with 'tests:' and run
 that. In the last case, return whatever follows 'tests: '. Error
 if none of these is true."
-  (let* ((file-path (abl-mode-get-test-file-path))
-	 (is-test-file (string-match abl-mode-test-file-regexp
-				     (buffer-file-name))))
-    (if (not is-test-file)
-	(let ((test-file-paths (abl-mode-test-for-code-file)))
-	  (if test-file-paths
-	      (abl-mode-join-string test-file-paths " ")
-	    (error "You are not in a test file, and there are no tests in header.")))
-      (if (= (line-number-at-pos) 1)
-	  file-path
-	(let* ((test-func-pos
-		(save-excursion
-		  (re-search-backward "^ *def test*" nil t)))
-	       (test-class-pos
-		(save-excursion
-		  (re-search-backward "^class *" nil t))))
-	  (cond
-	   ((not (or test-func-pos test-class-pos))
-	    (error "You are neither in a test class nor a test function."))
-	   ((and test-func-pos
-		 (and test-class-pos (< test-class-pos test-func-pos)))
-	    (abl-mode-get-test-function-path file-path))
-	   (test-class-pos (concat file-path
-				   abl-mode-test-path-module-class-separator
-				   (abl-mode-determine-test-class-name)))))))))
+  (let* ((file-path (abl-mode-get-test-file-path)))
+    (if (= (line-number-at-pos) 1)
+	file-path
+      (let* ((test-func-pos
+	      (save-excursion
+		(re-search-backward "^ *def test*" nil t)))
+	     (test-class-pos
+	      (save-excursion
+		(re-search-backward "^class *" nil t))))
+	(cond
+	 ((not (or test-func-pos test-class-pos))
+	  (error "You are neither in a test class nor a test function."))
+	 ((and test-func-pos
+	       (and test-class-pos (< test-class-pos test-func-pos)))
+	  (abl-mode-get-test-function-path file-path))
+	 (test-class-pos (concat file-path
+				 abl-mode-test-path-module-class-separator
+				 (abl-mode-determine-test-class-name))))))))
 
 
 (defun abl-mode-run-test-at-point ()
@@ -690,6 +667,7 @@ import module and print its __file__ attribute."
 ;; <<------------  TODOS -------------->>
 ;; - intelligent filtering of test files; do not complain when file does not fit regexp
 ;; - tdd mode where tests are ran when files change
+;; - open a library file from vm
 ;; - improve test infrastructure
 ;; - add not changing directories through pwdx
 ;; for mac: function pwdx {
