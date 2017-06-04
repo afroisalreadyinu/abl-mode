@@ -112,12 +112,16 @@
 (make-variable-buffer-local 'abl-mode-install-command)
 
 (defcustom abl-mode-test-file-regexp ".*_tests.py"
-"regexp used to check whether a file is a test file")
+  "regexp used to check whether a file is a test file")
 (make-variable-buffer-local 'abl-mode-test-file-regexp)
 
 (defcustom abl-mode-test-path-module-class-separator "."
-"character used to separate class name from module path. Alternative is ':'")
+  "string used to separate class name from module path.")
 (make-variable-buffer-local 'abl-mode-test-path-module-class-separator)
+
+(defcustom abl-mode-test-path-class-method-separator "."
+  "string used to separate class name from test method.")
+(make-variable-buffer-local 'abl-mode-test-path-class-method-separator)
 
 (defcustom abl-mode-code-file-tests-regexps
   '("^\"\"\"[^(\"\"\")]*\\(^tests:\\)" "^'''[^(''')]*\\(^tests:\\)")
@@ -128,6 +132,10 @@
   "^OK$\\|^FAILED (failures=[0-9]*)$"
 "Regexp to find out whether the test run has finished.")
 (make-variable-buffer-local 'abl-mode-end-testrun-re)
+
+(defcustom abl-mode-use-file-module t
+  "Use the python module path for test file; when nil, the relative path to file is used")
+(make-variable-buffer-local 'abl-mode-use-file-module)
 
 ;; <<----------------  Here ends the customization -------------->>
 
@@ -505,6 +513,15 @@ followed by a proper class name).")
   (let ((buffer-name (buffer-file-name)))
     (if (not (abl-mode-ends-with buffer-name ".py"))
 	(error "You do not appear to be in a python file."))
+    (substring buffer-file-name
+	       (+ (length abl-mode-branch-base) 1)
+	       (length buffer-name))))
+
+
+(defun abl-mode-get-test-file-module ()
+  (let ((buffer-name (buffer-file-name)))
+    (if (not (abl-mode-ends-with buffer-name ".py"))
+	(error "You do not appear to be in a python file."))
     (let ((relative-path (substring
 			  buffer-file-name
 			  (+ (length abl-mode-branch-base) 1)
@@ -517,7 +534,11 @@ followed by a proper class name).")
     (if (not (abl-mode-test-in-class))
 	(concat file-path abl-mode-test-path-module-class-separator function-name)
       (let ((class-name (abl-mode-determine-test-class-name)))
-	(concat file-path abl-mode-test-path-module-class-separator class-name "." function-name)))))
+	(concat file-path
+		abl-mode-test-path-module-class-separator
+		class-name
+		abl-mode-test-path-class-method-separator
+		function-name)))))
 
 
 (defun abl-mode-run-test (test-path &optional branch-name)
@@ -536,7 +557,9 @@ followed by a proper class name).")
   "Which tests should be run? If this is a test file, depending
 on where the cursor is, test whole file, class, or test method.
 Error if none of these is true."
-  (let* ((file-path (abl-mode-get-test-file-path)))
+  (let* ((file-path (if abl-mode-use-file-module
+			(abl-mode-get-test-file-module)
+		      (abl-mode-get-test-file-path))))
     (if (= (line-number-at-pos) 1)
 	file-path
       (let* ((test-func-pos
