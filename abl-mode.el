@@ -470,11 +470,11 @@ map for latest test run output."
   (save-excursion
     (end-of-line)
     (if (not (re-search-backward "^ *def test_*" nil t))
-	(error "Looks like you are not even in a function definiton! Bad girl!"))
+	(error "Looks like you are not even in a function definiton."))
     (let* ((start (re-search-forward "^ *def *"))
 	   (end (re-search-forward "test_[^\(]*" (line-end-position) t)))
       (if (not end)
-	  (error "Looks like you are not inside a test function. Go to a test function! Now!")
+	  (error "Looks like you are not inside a test function.")
 	(buffer-substring-no-properties start (point))))))
 
 
@@ -482,11 +482,11 @@ map for latest test run output."
   (save-excursion
     (if (not (re-search-backward "^class *" nil t))
 	(error "Looks like there is a problem with your python code (functions is indented
-but not in a class). Sorry, can't do anything")
+but not in a class).")
     (let* ((start (re-search-forward "^class *"))
 	   (end (re-search-forward "[^\(:]*" (line-end-position) t)))
       (if (not end)
-	  (error "Looks like there is a problem with you python code (keyword class not
+	  (error "Looks like there is a problem with your python code (keyword class not
 followed by a proper class name).")
 	(buffer-substring-no-properties start (point)))))))
 
@@ -504,7 +504,7 @@ followed by a proper class name).")
 (defun abl-mode-get-test-file-path ()
   (let ((buffer-name (buffer-file-name)))
     (if (not (abl-mode-ends-with buffer-name ".py"))
-	(error "You do not appear to be in a python file. Now open a python file!"))
+	(error "You do not appear to be in a python file."))
     (let ((relative-path (substring
 			  buffer-file-name
 			  (+ (length abl-mode-branch-base) 1)
@@ -534,10 +534,8 @@ followed by a proper class name).")
 
 (defun abl-mode-get-test-entity ()
   "Which tests should be run? If this is a test file, depending
-on where the cursor is, test whole file, class, or test
-method. Otherwise, look for a header with 'tests:' and run
-that. In the last case, return whatever follows 'tests: '. Error
-if none of these is true."
+on where the cursor is, test whole file, class, or test method.
+Error if none of these is true."
   (let* ((file-path (abl-mode-get-test-file-path)))
     (if (= (line-number-at-pos) 1)
 	file-path
