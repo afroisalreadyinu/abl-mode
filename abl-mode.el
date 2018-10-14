@@ -4,6 +4,9 @@
 ;; Author: Ulas Tuerkmen <ulas.tuerkmen at gmail dot com>
 ;; URL: http://github.com/afroisalreadyinu/abl-mode
 ;; Version: 0.9.2
+;; Keywords: tools, tdd, python
+;; URL: https://github.com/afroisalreadyinu/abl-mode
+;; Package-Requires: ((s.el "1.12"))
 ;;
 ;; Copyright (C) 2011 Ulas Tuerkmen
 ;;
@@ -23,10 +26,10 @@
 
 ;;; Commentary:
 
-;; The aim of this mode is to make editing Python code in a
-;; version-controlled project easier, and enable the execution of
-;; repetitive tasks --such as running tests or scripts-- in emacs
-;; shell buffers. Please see README.rst for details.
+;; The aim of this mode is to make editing Python code in a version-controlled
+;; project easier, and enable the execution of repetitive tasks --such as
+;; running tests or scripts-- in emacs shell buffers. Please see README.rst for
+;; details.
 
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 (eval-when-compile (require 'cl))

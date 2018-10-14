@@ -1,5 +1,5 @@
 ;; to run the tests, with emacs > 24:
-;; emacs -q -L . -l test.el --batch
+;; emacs -q -L . -l test.el
 ;; with earlier emacs versions:
 ;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
 ;; in both, replace test.el with just test if you want emacs use byte-compiled
@@ -415,4 +415,11 @@ vem is created."
 
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
-(ert 't)
+
+(let (tests (mapc (lambda (x) (abl-mode-starts-with x "-run-test="))
+		  command-line-args-left))
+  (when tests
+    (message "There is a test")))
+
+
+(ert 'testenv-init)
