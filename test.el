@@ -8,6 +8,7 @@
 (require 'abl-mode)
 (require 'ert)
 (require 'cl)
+(require 'seq)
 
 (toggle-debug-on-error)
 
@@ -416,10 +417,10 @@ vem is created."
 
 (add-hook 'find-file-hooks 'abl-mode-hook)
 
-(let (tests (mapc (lambda (x) (abl-mode-starts-with x "-run-test="))
-		  command-line-args-left))
-  (when tests
-    (message "There is a test")))
 
-
-(ert 'testenv-init)
+(let ((tests (mapcar (lambda (x) (intern (substring x (length  "-run-test="))))
+		     (seq-filter (lambda (x) (abl-mode-starts-with x "-run-test="))
+				 command-line-args-left))))
+  (if tests
+      (ert `(member ,@tests))
+    (ert 't)))
