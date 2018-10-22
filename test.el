@@ -414,13 +414,19 @@ vem is created."
 	 (should (= (length collected-msgs) 1))
 )))))
 
-
 (add-hook 'find-file-hooks 'abl-mode-hook)
 
+(defun run-elisp-tests ()
+  (let ((tests (mapcar (lambda (x) (intern (substring x (length  "-run-test="))))
+		       (seq-filter (lambda (x) (abl-mode-starts-with x "-run-test="))
+				   command-line-args-left))))
+    (if tests
+	(ert `(member ,@tests))
+      (ert 't))))
 
-(let ((tests (mapcar (lambda (x) (intern (substring x (length  "-run-test="))))
-		     (seq-filter (lambda (x) (abl-mode-starts-with x "-run-test="))
-				 command-line-args-left))))
-  (if tests
-      (ert `(member ,@tests))
-    (ert 't)))
+(defun create-package-sandbox ()
+  (interactive)
+  (let ((package (save-excursion (package-buffer-info))))
+    (message (format "%s" (package-desc-reqs package)))))
+
+(run-elisp-tests)
