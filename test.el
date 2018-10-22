@@ -9,6 +9,7 @@
 (require 'ert)
 (require 'cl)
 (require 'seq)
+(require 'subr-x)
 
 (toggle-debug-on-error)
 
@@ -460,7 +461,10 @@ vem is created."
 		   (format install-file-content
 			   (package-desc-name package)
 			   (package-desc-name package)))
-    (makedir packages-dir)))
+    (makedir packages-dir)
+    (kill-new (format "emacs -q -L . -l %s -l %s"
+		      init-file-path
+		      install-file-path))))
 
 
 
