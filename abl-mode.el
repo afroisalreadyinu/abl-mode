@@ -6,7 +6,7 @@
 ;; Version: 0.9.2
 ;; Keywords: tools, tdd, python
 ;; URL: https://github.com/afroisalreadyinu/abl-mode
-;; Package-Requires: ((s.el "1.12"))
+;; Package-Requires: ((s "1.12"))
 ;;
 ;; Copyright (C) 2011 Ulas Tuerkmen
 ;;
