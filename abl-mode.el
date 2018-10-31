@@ -25,9 +25,10 @@
 
 ;; The aim of this mode is to make editing Python code in a
 ;; version-controlled project easier, and enable the execution of
-;; repetitive tasks --such as running tests or scripts-- in emacs
-;; shell buffers. Please see README.rst for details.
+;; repetitive tasks --such as running tests or scripts-- in Emacs
+;; shell buffers.  Please see README.rst for details.
 
+;;; Code:
 ;; <<--------- The necessary minor-mode stuff  ---------->>
 (eval-when-compile (require 'cl))
 
@@ -36,12 +37,12 @@
   :group 'python)
 
 (defvar abl-mode nil
-  "Mode variable for abl-mode")
+  "Mode variable for abl-mode.")
 (make-variable-buffer-local 'abl-mode)
 
 ;;;###autoload
 (defun abl-mode (&optional arg)
-  "abl minor mode"
+  "This is abl minor mode ARG."
   (interactive "P")
   (setq abl-mode (if (null arg) (not abl-mode)
 		   (> (prefix-numeric-value arg) 0)))
