@@ -690,7 +690,9 @@ import module and print its __file__ attribute."
 
 ;; <<------------  TODOS -------------->>
 ;; - intelligent filtering of test files; do not complain when file does not fit regexp
+;; - run shell in current virtualenv
 ;; - tdd mode where tests are ran when files change
+;; - use https://github.com/magit/ghub
 ;; - open a library file from vm
 ;; - improve test infrastructure
 ;; - add not changing directories through pwdx
