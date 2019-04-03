@@ -688,6 +688,7 @@ import module and print its __file__ attribute."
 
 ;; <<------------  TODOS -------------->>
 ;; - go to next test
+;; - run all tests in project
 ;; - option to add an argument to test run with C-u (e.g. -x for pytest)
 ;; - intelligent filtering of test files; do not complain when file does not fit regexp
 ;; - tdd mode where tests are ran when files change
