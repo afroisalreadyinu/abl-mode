@@ -508,9 +508,7 @@ followed by a proper class name).")
   (let ((buffer-name (buffer-file-name)))
     (if (not (abl-mode-ends-with buffer-name ".py"))
 	(error "You do not appear to be in a python file."))
-    (substring buffer-name
-	       (length abl-mode-branch-base)
-	       (length buffer-name))))
+    (file-relative-name buffer-name abl-mode-branch-base)))
 
 
 (defun abl-mode-get-test-file-module ()
