@@ -42,15 +42,16 @@
 
 ;;;###autoload
 (defun abl-mode (&optional arg)
-  "This is abl minor mode ARG."
+  "Minor mode for TDD in Python"
   (interactive "P")
   (setq abl-mode (if (null arg) (not abl-mode)
 		   (> (prefix-numeric-value arg) 0)))
   (if abl-mode
       (let ((project-base (abl-mode-find-base-dir)))
 	(if (not project-base)
-	    (setq abl-mode nil)
-	  (setq abl-mode-branch-base project-base)
+	    (progn (message "Could not find project base. Please make sure there is a setup.py or requirements.txt in a higher directory.")
+		   (setq abl-mode nil))
+	  (setq abl-mode-branch-base (expand-file-name project-base))
 	  (setq abl-mode-branch (abl-mode-branch-name abl-mode-branch-base))
 	  (setq abl-mode-project-name (abl-mode-get-project-name abl-mode-branch-base))
 	  (setq abl-mode-shell-name (abl-mode-shell-name-for-branch
@@ -237,16 +238,9 @@
        (car (last (split-string (abl-mode-remove-last-slash path) "/")))))
 
 
-(defun abl-mode-find-base-dir (&optional dir-path)
-  (let* ((path (or dir-path (buffer-file-name))))
-    (if (and (file-exists-p (abl-mode-concat-paths path "setup.py"))
-	     (not (file-exists-p (abl-mode-concat-paths path "__init__.py"))))
-	path
-      (let ((higher (abl-mode-higher-dir path)))
-	(if (not higher)
-	    nil
-	  (abl-mode-find-base-dir higher))))))
-
+(defun abl-mode-find-base-dir ()
+  (or (locate-dominating-file (buffer-file-name) "setup.py")
+      (locate-dominating-file (buffer-file-name) "requirements.txt")))
 
 (defun abl-mode-string-in-buffer (string)
   (save-excursion
@@ -514,8 +508,8 @@ followed by a proper class name).")
   (let ((buffer-name (buffer-file-name)))
     (if (not (abl-mode-ends-with buffer-name ".py"))
 	(error "You do not appear to be in a python file."))
-    (substring buffer-file-name
-	       (+ (length abl-mode-branch-base) 1)
+    (substring buffer-name
+	       (length abl-mode-branch-base)
 	       (length buffer-name))))
 
 
