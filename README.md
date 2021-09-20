@@ -1,44 +1,36 @@
-========
-abl-mode
-========
+# abl-mode
 
-The abl-mode is a minor mode for python programmers who develop using
-virtual environments, version control branches and unit tests.
+The abl-mode is a minor mode for python programmers who develop using virtual
+environments, version control branches and unit tests.
 
-What does it do?
-----------------
+## What does it do?
 
-Abl-mode is ideal for developers who switch development branches
-frequently, and create python virtual environments for these
-individual branches. When you run a test with ``C-c t`` or start a
-server with ``C-c r``, abl-mode checks the availability of a virtual
-environment for the branch you're on. The name of the virtual
-environment is determined according to the name of the project and the
-VCS branch. If there is no such virtual environment, the user is
-prompted either for the name of a replacement virtual environment, or
-``y`` for creating a new virtual environment. Once you've run a test,
-and made some changes depending on the results, you can rerun the same
-test with ``C-c u``.
+Abl-mode is ideal for developers who switch development branches frequently, and
+create python virtual environments for these individual branches. When you run a
+test with ``C-c t`` or start a server with ``C-c r``, abl-mode checks the
+availability of a virtual environment for the branch you're on. The name of the
+virtual environment is determined according to the name of the project and the
+VCS branch. If there is no such virtual environment, the user is prompted either
+for the name of a replacement virtual environment, or ``y`` for creating a new
+virtual environment. Once you've run a test, and made some changes depending on
+the results, you can rerun the same test with ``C-c u``.
 
-Installing
-----------
+## Installing
 
-To install abl-mode, put abl.el on your elisp path, and include the
-following in your emacs configuration file::
+To install abl-mode, put abl.el on your elisp path, and include the following in
+your emacs configuration file::
 
-   (require 'abl-mode)
+    (require 'abl-mode)
 
-If you want to activate abl-mode automatically for python files, add
-the following to your Emacs configuration::
+If you want to activate abl-mode automatically for python files, add the
+following to your Emacs configuration::
 
-   (add-hook 'find-file-hooks 'abl-mode-hook)
+    (add-hook 'find-file-hooks 'abl-mode-hook)
 
-You can replace find-file-hooks with python-mode-hook if you want to
-activate abl-mode only for python files.
+You can replace find-file-hooks with python-mode-hook if you want to activate
+abl-mode only for python files.
 
-=======================================
-Commands and their default key bindings
-=======================================
+## Commands and their default key bindings
 
 +----------+-------------------------------------------+
 |M-x       |Toggle abl-mode                            |
@@ -64,46 +56,40 @@ Commands and their default key bindings
 |          |                                           |
 +----------+-------------------------------------------+
 
-=============
-Running Tests
-=============
+## Running Tests
 
 Here is how the tests to run are determined:
 
-If the name of the file does not match ``abl-mode-test-file-regexp``,
-it is assumed that this is not a test file, but a code file. In that
-case, the beginning of the file is searched (using the regular
-expressions in ``abl-mode-code-file-tests-regexps``) for a line that
-lists the tests for that file. The format for this line is ``tests:
-wherever/the_tests_are.py``. If no such header is found, an error is
-shown.
+If the name of the file does not match ``abl-mode-test-file-regexp``, it is
+assumed that this is not a test file, but a code file. In that case, the
+beginning of the file is searched (using the regular expressions in
+``abl-mode-code-file-tests-regexps``) for a line that lists the tests for that
+file. The format for this line is ``tests: wherever/the_tests_are.py``. If no
+such header is found, an error is shown.
 
-If the file is a test file, which test is run depends on the location
-of the cursor. If it is at the start of the file, the whole file is
-run. If it is in an individual test, that test is run. If it is in a
-test class but not in a test, that test class is run.
+If the file is a test file, which test is run depends on the location of the
+cursor. If it is at the start of the file, the whole file is run. If it is in an
+individual test, that test is run. If it is in a test class but not in a test,
+that test class is run.
 
-=============
-Customization
-=============
+## Customization
 
-You can set any of the following options either by including a line
-such as the following in your .emacs file::
+You can set any of the following options either by including a line such as the
+following in your .emacs file::
 
     (setq option-name new-value)
 
-Or by listing project-local customization options in a file named
-`.abl` at the base level of a project, i.e. where the `setup.py` file
-is located. The customization line in such a file should start with
-the option name, followed by the value, such as::
+Or by listing project-local customization options in a file named `.abl` at the
+base level of a project, i.e. where the `setup.py` file is located. The
+customization line in such a file should start with the option name, followed by
+the value, such as::
 
     abl-mode-test-command "ENV_VAR=\"env var value\"" pytest -x %s"
 
-As you can see here, the value should be as you would include it in
-your configuration; it is read and evaluated, so that logical values
-such as nil or t can also be used. String formatting is similar to the
-way it is done in Python; %s gets replaced by the relevant value when
-the option gets used.
+As you can see here, the value should be as you would include it in your
+configuration; it is read and evaluated, so that logical values such as nil or t
+can also be used. String formatting is similar to the way it is done in Python;
+%s gets replaced by the relevant value when the option gets used.
 
 
 +-------------------------------------+------------------------------------------+
