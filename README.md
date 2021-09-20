@@ -96,3 +96,25 @@ can also be used. String formatting is similar to the way it is done in Python;
 
 <tr><td><code>abl-mode-branch-shell-prefix</code></td><td> The string appended to the name of the shell buffer created to run tests. Default: <code>ABL-SHELL:</code></td></tr>
 </table>
+
+## Running the tests
+
+```
+export HOME=/tmp/temporaryhome
+mkdir -p $HOME/.emacs.d
+cp testing-files/init.el $HOME/.emacs.d
+emacs -L . -l ert -l $HOME/.emacs.d/init.el  -l test.el --batch -f ert-run-tests-batch-and-exit
+```
+
+This will run all the tests in `test.el`. If you want to run a single test, use
+the following, more complicated command:
+
+```
+emacs -L . -l ert -l $HOME/.emacs.d/init.el  -l test.el --batch --eval '(let ((ert-quiet t)) (ert-run-tests-batch-and-exit "test-git-abl"))'
+```
+
+## TODOs
+
+[ ] Fix failing tests & improve testing
+[ ] abl-mode for elisp
+[ ] Option to add an argument to test run with C-u (e.g. -x for pytest)

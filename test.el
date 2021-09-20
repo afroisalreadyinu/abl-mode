@@ -1,15 +1,13 @@
-;; to run the tests, with emacs > 24:
-;; emacs -q -L . -l test.el --batch
-;; with earlier emacs versions:
-;; emacs -q -L . -L /path/to/dir/where/ert/resides -l test.el --batch
-;; in both, replace test.el with just test if you want emacs use byte-compiled
-;; files, which is considerably faster
+;; See `Running the tests` section in the readme.
 
 (require 'abl-mode)
 (require 'ert)
-(require 'cl)
+(require 'cl-lib)
+(require 'f)
 
 (toggle-debug-on-error)
+
+(add-hook 'find-file-hooks 'abl-mode-hook)
 
 (defun write-to-file (file-path string)
   (with-temp-buffer (insert string)
@@ -20,32 +18,33 @@
     (insert-file-contents file-path)
     (buffer-string)))
 
-(defvar project-subdir "aproject")
-(defvar test-file-name "project_tests.py")
-(defvar output-file-path "/tmp/tc.txt")
-(defvar proof-file-name "out.txt")
-(defvar test-file-content
+(defconst test-file-content
   (concat "import unittest\n"
 	  "\n"
+	  "def test_free_standing_one():\n"
+	  "#markerone\n"
+	  "    pass\n"
+	  "\n"
 	  "class AblTest(unittest.TestCase):\n"
-	  "#marker\n"
+	  "#markertwo\n"
 	  "    def test_abl_mode(self):\n"
-	  "        self.fail('A FAILING' +' TEST')\n"
+	  "        self.fail('A FAILING ' + 'TEST')\n"
 	  "\n"
 	  "    def test_other_thing(self):\n"
 	  "        pass"
 	  "\n"
 	  "    def test_one_more_thing(self):\n"
-	  "        self.fail()"))
+	  "        self.fail()"
+	  "\n"
+	  "def test_free_standing_two():\n"
+	  "#markerthree\n"
+	  "    pass\n"
+	  ))
 
-(defvar setup-content
+(defconst setup-content
   (concat "from setuptools import setup\n"
 	  "setup(name='test')\n"))
 
-
-(defun makedir (dir)
-  (if (not (file-exists-p dir))
-      (make-directory dir)))
 
 (defun character-count (path char)
   (let ((count 0))
@@ -61,37 +60,42 @@
 	       (:constructor new-testenv
 			     (base-dir
 			      &optional
-			      (project-dir (abl-mode-concat-paths base-dir project-subdir))
-			      (proof-dir (abl-mode-concat-paths base-dir "_proof"))
-			      (setup-py-path (abl-mode-concat-paths base-dir "setup.py"))
-			      (test-file-path (abl-mode-concat-paths project-dir test-file-name))
-			      (init-file-path (abl-mode-concat-paths project-dir "__init__.py")))))
-  base-dir project-dir proof-dir setup-py-path test-file-path init-file-path)
+			      (project-dir (f-join base-dir "aproject"))
+			      (package-dir (f-join project-dir "apackage"))
+			      (proof-dir (f-join base-dir "_proof"))
+			      (setup-py-path (f-join project-dir "setup.py"))
+			      (test-file-path (f-join project-dir "project_tests.py"))
+			      (init-file-path (f-join package-dir "__init__.py")))))
+  base-dir project-dir package-dir proof-dir setup-py-path test-file-path init-file-path)
 
 (defun random-testenv ()
   (new-testenv (make-temp-file "abltest" 't)))
 
 (defun testenv-init (env)
-  ;;create git repo with setup.py and a test file. the folder
-  ;;structure will look something like this (the temp directory name
-  ;;starting with abltest will be different):
+  ;; create git repo with setup.py and a test file. the folder structure will
+  ;; look something like this (the temp directory name starting with abltest
+  ;; will be different):
+  ;;
   ;; /tmp
   ;;   |
   ;;   - abltest18945
   ;;        |
   ;;        - .git
-  ;;        - setup.py
   ;;        - _proof (dir)
   ;;        - aproject
-  ;;             |
-  ;;             - project_tests.py (contents: test-file-content)
-  ;;             - __init__.py (contents: #nothing)
-    (makedir (testenv-base-dir env))
-    (assert (abl-mode-index-of "Initialized empty Git repository"
-		      (shell-command-to-string
-		       (concat "git init " (testenv-base-dir env)))))
-    (makedir (testenv-project-dir env))
-    (makedir (testenv-proof-dir env))
+  ;;           |
+  ;;           - setup.py
+  ;;           - project_tests.py (contents: test-file-content)
+  ;;           - apackage
+  ;;               |
+  ;;               - __init__.py (contents: #nothing)
+    (make-directory (testenv-base-dir env) 't)
+    (cl-assert (s-contains? "Initialized empty Git repository"
+			    (shell-command-to-string
+			     (concat "git init -b trunk " (testenv-base-dir env)))))
+    (make-directory (testenv-project-dir env))
+    (make-directory (testenv-package-dir env))
+    (make-directory (testenv-proof-dir env))
     (write-to-file (testenv-setup-py-path env) setup-content)
     (write-to-file (testenv-test-file-path env) test-file-content)
     (write-to-file (testenv-init-file-path env) "#nothing")
@@ -99,32 +103,31 @@
      (format
       "cd %s && git add setup.py && git add %s && git commit -am 'haha'"
       (testenv-base-dir env)
-      (abl-mode-concat-paths project-subdir test-file-name)))
+      (testenv-project-dir env)))
     env)
 
 (defun testenv-project-name (env)
-  (abl-mode-last-path-comp (testenv-project-dir env)))
+  (abl-last-path-comp (testenv-project-dir env)))
 
 (defun testenv-base-dirname (env)
-  (abl-mode-last-path-comp (directory-file-name (testenv-base-dir env))))
+  (abl-last-path-comp (directory-file-name (testenv-base-dir env))))
 
 (defun testenv-proof-file (env)
-  (abl-mode-concat-paths (testenv-proof-dir env) "out"))
+  (f-join (testenv-proof-dir env) "out"))
 
 (defun testenv-branch-git (env branch-name)
   (shell-command-to-string (format
-			    "cd %s && git branch %s && git checkout %s"
-			    (testenv-base-dir env) branch-name branch-name)))
+			    "cd %s && git checkout -b %s"
+			    (testenv-base-dir env) branch-name)))
 
 (defun cleanup (path)
   ;; rm -rf's a folder which begins with /tmp. you shouldn't put
   ;; important stuff into /tmp.
-  (unless (or (abl-mode-starts-with path "/tmp") (abl-mode-starts-with path "/var/folders/"))
+  (unless (or (s-starts-with? "/tmp" path) (s-starts-with? "/var/folders/" path))
     (error
      (format "Tried to cleanup a path (%s) not in /tmp; refusing to do so."
 	     path)))
-  (shell-command-to-string
-   (concat "rm -rf " path)))
+   (if (file-directory-p path) (delete-directory path 't)))
 
 (defmacro abl-git-test (&rest tests-etc)
   "Macro for tests. The first argument determines whether a dummy
@@ -137,15 +140,18 @@ vem is created."
      (unwind-protect
 	 (progn
 	   ,@tests-etc)
-	 ;;(cleanup base-dir)
-	 )))
+       (cleanup (testenv-base-dir env))
+       (dolist (buffer (buffer-list))
+	 (if (s-starts-with? abl-mode-branch-shell-prefix (buffer-name buffer))
+	     (let ((kill-buffer-query-functions nil))
+	       (kill-buffer buffer))))
+       )))
 
 (defun abl-values-for-path (path)
   (let ((buffer (find-file path)))
     (list
      (buffer-local-value 'abl-mode buffer)
      (buffer-local-value 'abl-mode-branch buffer)
-     (buffer-local-value 'abl-mode-branch-base buffer)
      (buffer-local-value 'abl-mode-project-name buffer)
      (buffer-local-value 'abl-mode-vem-name buffer)
      (buffer-local-value 'abl-mode-shell-name buffer))))
@@ -153,75 +159,39 @@ vem is created."
 ;; -----------------------------------------------------------------------------------------
 ;; Tests start here
 
-(ert-deftest test-abl-utils ()
-  (should (string-equal (abl-mode-concat-paths "/tmp/blah" "yada" "etc")
-			"/tmp/blah/yada/etc"))
-  (should (equal (abl-mode-remove-last '(1 2 3 4)) '(1 2 3)))
-  (should (equal (abl-mode-remove-last '(1)) '()))
-  (should (string-equal (abl-mode-higher-dir "/home/username/temp") "/home/username"))
-  (should (string-equal (abl-mode-higher-dir "/home/username/") "/home"))
-  (should (string-equal (abl-mode-higher-dir "/home") "/"))
-  (should (not(abl-mode-higher-dir "/")))
-  (should (string-equal (abl-mode-remove-last-slash "/hehe/haha") "/hehe/haha"))
-  (should (string-equal (abl-mode-remove-last-slash "/hehe/haha/") "/hehe/haha"))
-  (should (string-equal (abl-mode-remove-last-slash "") ""))
-  (should (string-equal (abl-mode-last-path-comp "/hehe/haha") "haha"))
-  (should (string-equal (abl-mode-last-path-comp "/hehe/haha/") "haha"))
-  (should (string-equal (abl-mode-last-path-comp "/hehe/haha.py") "haha.py"))
-  (should (not (abl-mode-last-path-comp "")))
-  (should (abl-mode-starts-with "test" "te"))
-  (should (abl-mode-starts-with "" ""))
-  (should (not (abl-mode-starts-with "blah" "te"))))
+(ert-deftest test-abl-capitalized ()
+  (should (abl-capitalized? "Hello"))
+  (should-not (abl-capitalized? "hello"))
+  )
 
 
-(ert-deftest test-cvs-utils ()
-  (let* ((git-dir (make-temp-file "" 't))
-	 (git-deeper (abl-mode-concat-paths git-dir "blah"))
-	 (svn-dir (make-temp-file "" 't))
-	 (svn-deeper (abl-mode-concat-paths svn-dir "yada"))
-	 (empty-dir (make-temp-file "" 't)))
-    (mapc #'make-directory (list (abl-mode-concat-paths git-dir ".git")
-				 (abl-mode-concat-paths svn-dir ".svn")
-				 git-deeper svn-deeper))
-    (should (string-equal (abl-mode-git-or-svn git-dir) "git"))
-    (should (string-equal (abl-mode-git-or-svn git-deeper) "git"))
-    (should (string-equal (abl-mode-git-or-svn svn-dir) "svn"))
-    (should (string-equal (abl-mode-git-or-svn svn-deeper) "svn"))
-    (should (not (abl-mode-git-or-svn empty-dir)))))
-
-
-(ert-deftest test-project-name-etc ()
-  (should (string-equal (abl-mode-branch-name "/home") "home"))
-  (let* ((env (testenv-init (random-testenv)))
-    (should (string-equal (abl-mode-branch-name (testenv-project-dir env)) "master"))
-    (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
-			  (testenv-project-name env)))
-
-    (should (string-equal (abl-mode-get-ve-name "master" "project")
-     			  "project_master"))
-
-    (cleanup (abl-mode-concat-paths (testenv-project-dir env) ".git"))
-    (make-directory (abl-mode-concat-paths (testenv-project-dir env) ".svn"))
-    (should (string-equal (abl-mode-branch-name (testenv-project-dir env))
-     			  (testenv-project-name env)))
-    (should (string-equal (abl-mode-get-project-name (testenv-project-dir env))
-     			  (testenv-base-dirname env)))
- )))
-
-
-(ert-deftest test-empty-git-abl ()
+(ert-deftest test-git-utils ()
   (abl-git-test
-   (cleanup (abl-mode-concat-paths (testenv-base-dir env) ".git"))
+   (should (string-equal (abl-git-branch (testenv-project-dir env)) "trunk"))
+   (testenv-branch-git env "yello")
+   (should (string-equal (abl-git-branch (testenv-project-dir env)) "yello"))
+   (cleanup (concat (testenv-base-dir env) "/.git"))
+   (should-not (abl-git-branch (testenv-project-dir env)))
+   ))
+
+
+(ert-deftest test-project-vars ()
+  (abl-git-test
+    (should (string-equal (abl-git-branch (testenv-project-dir env)) "trunk"))
+    (should (string-equal (abl-get-project-name (testenv-project-dir env)) "aproject"))
+    (should (string-equal (abl-make-ve-name "trunk" "project")
+     			  "project_trunk"))
+))
+
+
+(ert-deftest test-no-vc-abl ()
+  (abl-git-test
+   (cleanup (f-join (testenv-base-dir env) ".git"))
    (let ((test-buffer (find-file (testenv-test-file-path env))))
      (should (buffer-local-value 'abl-mode test-buffer))
-     (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
-			   (testenv-base-dirname env)))
-     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
-			   (testenv-base-dir env)))
-     (should (string-equal (buffer-local-value 'abl-mode-project-name test-buffer)
-			   (testenv-base-dirname env)))
-     (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
-			   (concat (testenv-base-dirname env) "_" (testenv-base-dirname env))))
+     (should (string-equal (buffer-local-value 'abl-mode-project-name test-buffer) "aproject"))
+     (should-not (buffer-local-value 'abl-mode-branch test-buffer))
+     (should (string-equal (buffer-local-value 'abl-ve-name test-buffer) "aproject"))
 )))
 
 
@@ -230,18 +200,10 @@ vem is created."
    (let ((test-buffer (find-file (testenv-test-file-path env))))
      (should (buffer-local-value 'abl-mode test-buffer))
      (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
-			   "master"))
-     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
-			   (testenv-base-dir env)))
-     (should (string-equal (testenv-base-dirname env)
-			   (buffer-local-value 'abl-mode-project-name test-buffer)))
-      (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
-			    (concat (testenv-base-dirname env) "_master")))
-      (should (string-equal (buffer-local-value
-			     'abl-mode-shell-name test-buffer)
-			    (concat abl-mode-branch-shell-prefix
-				    (testenv-base-dirname env)
-				    "_master")))
+			   "trunk"))
+     (should (string-equal (buffer-local-value 'abl-mode-project-name test-buffer) "aproject"))
+     (should (string-equal (buffer-local-value 'abl-ve-name test-buffer) "aproject_trunk"))
+     (should (string-equal (buffer-local-value 'abl-mode-shell-name test-buffer) "ABL-SHELL:aproject_trunk"))
 )))
 
 
@@ -252,60 +214,56 @@ vem is created."
      (should (buffer-local-value 'abl-mode test-buffer))
      (should (string-equal (buffer-local-value 'abl-mode-branch test-buffer)
 			   "gitbranch"))
-     (should (string-equal (buffer-local-value 'abl-mode-branch-base test-buffer)
-			   (testenv-base-dir env)))
-     (should (string-equal (testenv-base-dirname env)
-			   (buffer-local-value 'abl-mode-project-name test-buffer)))
-      (should (string-equal (buffer-local-value 'abl-mode-ve-name test-buffer)
-			    (concat (testenv-base-dirname env) "_gitbranch")))
-      (should (string-equal (buffer-local-value
-			     'abl-mode-shell-name test-buffer)
-			    (concat abl-mode-branch-shell-prefix
-				    (testenv-base-dirname env)
-				    "_gitbranch")))
+     (should (string-equal (buffer-local-value 'abl-mode-project-name test-buffer) "aproject"))
+     (should (string-equal (buffer-local-value 'abl-ve-name test-buffer) "aproject_gitbranch"))
+     (should (string-equal (buffer-local-value 'abl-mode-shell-name test-buffer) "ABL-SHELL:aproject_gitbranch"))
 )))
 
 (ert-deftest test-test-at-point ()
   (abl-git-test
    (find-file (testenv-test-file-path env))
    (goto-char (point-min))
+   (should (string-equal (abl-mode-get-test-entity) "project_tests.py"))
+   (search-forward "markerone")
+   (should (string-equal (abl-mode-get-test-entity) "project_tests.py::test_free_standing_one"))
+   (search-forward "markertwo")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests"))
-   (search-forward "marker")
-   (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests.AblTest"))
+			 "project_tests.py::AblTest"))
    (search-forward "self.fail")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests.AblTest.test_abl_mode"))
+			 "project_tests.py::AblTest::test_abl_mode"))
    (search-forward "pass")
    (should (string-equal (abl-mode-get-test-entity)
-			 "aproject.project_tests.AblTest.test_other_thing"))
+			 "project_tests.py::AblTest::test_other_thing"))
+   (search-forward "markerthree")
+   (should (string-equal (abl-mode-get-test-entity) "project_tests.py::test_free_standing_two"))
 ))
 
 (ert-deftest test-dot-file ()
   (abl-git-test
-   (write-to-file (abl-mode-concat-paths (testenv-base-dir env) ".abl")
-		  "abl-mode-ve-name \"VENAME\"\nabl-mode-shell-name \"SHELLNAME\"")
+   (write-to-file (f-join (testenv-project-dir env) ".abl")
+		  "abl-ve-name \"VENAME\"\nabl-mode-shell-name \"SHELLNAME\"")
    (find-file (testenv-test-file-path env))
-   (should (string-equal abl-mode-ve-name "VENAME"))
+   (should (string-equal abl-ve-name "VENAME"))
    (should (string-equal abl-mode-shell-name "SHELLNAME"))))
 
 (ert-deftest test-ve-check-and-activation ()
   (let ((collected-msgs '())
 	(output-dir (make-temp-file "testout" 't)))
-    (flet ((read-from-minibuffer
-	    (msg)
-	    (setq collected-msgs (append collected-msgs (list msg)))
-	    (if (= (length collected-msgs) 1)
-		"test-ve"
-	      "y")))
-    (abl-git-test
-     (find-file (testenv-test-file-path env))
-     (setq abl-mode-ve-create-command (concat "cd " output-dir " && touch %s"))
-     (abl-mode-exec-command "ls")
-     (sleep-for 1)
-     (file-exists-p (abl-mode-concat-paths output-dir "test-ve"))
-     ))))
+    ;; mock the read-from-minibuffer used for getting user input
+    (cl-letf (((symbol-function 'read-from-minibuffer)
+	       (lambda (msg)
+	       (setq collected-msgs (append collected-msgs (list msg)))
+	       (if (= (length collected-msgs) 1)
+		   "test-ve"
+		 "y"))))
+      (abl-git-test
+       (find-file (testenv-test-file-path env))
+       (setq abl-mode-ve-create-command (concat "cd " output-dir " && touch %s"))
+       (abl-mode-exec-command "ls")
+       (sleep-for 1)
+       (file-exists-p (f-join output-dir "test-ve"))
+       ))))
 
 (ert-deftest test-running-tests ()
   (abl-git-test
@@ -316,9 +274,8 @@ vem is created."
      (let ((shell-buffer (get-buffer shell-name)))
        (should shell-buffer)
        (switch-to-buffer shell-buffer)
-       (while (not (progn (goto-char (point-min))
-			  (re-search-forward abl-mode-end-testrun-re nil t)))
-	 (sleep-for 1))
+       ;; f**k it, we'll do it with sleep. I'll fix it later.
+       (sleep-for 2)
        (goto-char (point-min))
        (should (search-forward "A FAILING TEST" nil t))
        (goto-char (point-min))
@@ -337,40 +294,20 @@ vem is created."
      (sleep-for 1)
      (while (abl-shell-busy shell-name) (sleep-for 1))
      (should (gethash shell-name abl-mode-last-tests-run))
+     (switch-to-buffer shell-name)
      (goto-char (point-min))
      (should (= (count-matches "A FAILING TEST") 1))
 
+     ;; we want to make sure the test from project_tests.py is executed
      (copy-file (testenv-test-file-path env) new-test-file-path)
      (find-file new-test-file-path)
      (setq abl-mode-check-and-activate-ve nil)
      (abl-mode-rerun-last-test)
      (sleep-for 1)
      (while (abl-shell-busy shell-name) (sleep-for 1))
+     (switch-to-buffer shell-name)
      (goto-char (point-min))
      (should (= (count-matches "A FAILING TEST") 2))
-)))
-
-
-(ert-deftest test-test-run-output-parsing ()
-  (abl-git-test
-   (find-file (testenv-test-file-path env))
-   (let ((shell-name abl-mode-shell-name))
-     (setq abl-mode-check-and-activate-ve nil)
-     (goto-char (point-min))
-     (abl-mode-run-test-at-point)
-     ;; we need this because the next check runs right after the command is fired
-     (sleep-for 1)
-     (while (abl-shell-busy shell-name) (sleep-for 1))
-     ;; and this one is so that the shell outputis processed
-     (sleep-for 1)
-     (switch-to-buffer (get-buffer "*Messages*"))
-     (goto-char (point-min))
-     (should (search-forward "FAILED: 2 SUCCESS: 1" nil t))
-     (let ((last-run-info (gethash shell-name
-				   abl-mode-last-tests-output nil)))
-       (should last-run-info)
-       (should (= (abl-testrun-output-failed last-run-info) 2))
-       (should (= (abl-testrun-output-successful last-run-info) 1)))
 )))
 
 
@@ -379,40 +316,38 @@ vem is created."
 	 (ve-dir (make-temp-file "ves" 't))
 	 (collected-msgs '())
 	 (replacement-ve-name "test-ve")
-	 (ve-out-file (abl-mode-concat-paths output-dir replacement-ve-name)))
-    (write-to-file (abl-mode-concat-paths ve-dir replacement-ve-name) "blah")
-    (flet ((read-from-minibuffer (msg)
-	    (setq collected-msgs (append collected-msgs (list msg)))
-	    "test-ve"))
-      (abl-git-test
-       (find-file (testenv-test-file-path env))
-       (setq abl-mode-ve-activate-command
-	     (concat "cd " output-dir " && echo 't' >> %s"))
-       (setq abl-mode-ve-base-dir ve-dir)
-       (save-excursion (abl-mode-exec-command "ls"))
-       (sleep-for 1)
-       (should (file-exists-p ve-out-file))
-       (should (= (character-count ve-out-file "t") 1))
-       (should (= (length collected-msgs) 1))
-       (should (string-equal (gethash abl-mode-shell-name
-				      abl-mode-replacement-vems nil)
-			     replacement-ve-name))
-       (should (string-equal abl-mode-ve-name replacement-ve-name))
+	 (ve-out-file (f-join output-dir replacement-ve-name)))
+    (write-to-file (f-join ve-dir replacement-ve-name) "blah")
 
-       (let ((new-test-file-path
-	      (replace-regexp-in-string
-	       "project_tests" "other_tests" (testenv-test-file-path env))))
-	 (copy-file (testenv-test-file-path env) new-test-file-path)
-	 (find-file new-test-file-path)
-	 (setq abl-mode-ve-activate-command
-	       (concat "cd " output-dir " && echo 't' >> %s"))
-	 (setq abl-mode-ve-base-dir ve-dir)
-	 (abl-mode-exec-command "ls")
-	 (sleep-for 1)
-	 (should (= (character-count ve-out-file "t") 2))
-	 (should (= (length collected-msgs) 1))
-)))))
+    (cl-letf (((symbol-function 'read-from-minibuffer)
+	       (lambda (msg)
+		 (setq collected-msgs (append collected-msgs (list msg))) "test-ve")))
+	      (abl-git-test
+	       (find-file (testenv-test-file-path env))
+	       (setq abl-mode-ve-activate-command
+		     (concat "cd " output-dir " && echo 't' >> %s"))
+	       (setq abl-mode-ve-base-dir ve-dir)
+	       (save-excursion (abl-mode-exec-command "ls"))
+	       (sleep-for 1)
+	       (should (file-exists-p ve-out-file))
+	       (should (= (character-count ve-out-file "t") 1))
+	       (should (= (length collected-msgs) 1))
+	       (should (string-equal (gethash abl-mode-shell-name
+					      abl-mode-replacement-vems nil)
+				     replacement-ve-name))
+	       (should (string-equal abl-ve-name replacement-ve-name))
 
-
-(add-hook 'find-file-hooks 'abl-mode-hook)
-(ert 't)
+	       (let ((new-test-file-path
+		      (replace-regexp-in-string
+		       "project_tests" "other_tests" (testenv-test-file-path env))))
+		 (copy-file (testenv-test-file-path env) new-test-file-path)
+		 (find-file new-test-file-path)
+		 (setq abl-mode-ve-activate-command
+		       (concat "cd " output-dir " && echo 't' >> %s"))
+		 (setq abl-mode-ve-base-dir ve-dir)
+		 (abl-mode-exec-command "ls")
+		 (sleep-for 1)
+		 (should (= (character-count ve-out-file "t") 2))
+		 (should (= (length collected-msgs) 1))
+		 ))
+)))
