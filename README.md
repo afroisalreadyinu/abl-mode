@@ -115,6 +115,10 @@ emacs -L . -l ert -l $HOME/.emacs.d/init.el  -l test.el --batch --eval '(let ((e
 
 ## TODOs
 
-[ ] Fix failing tests & improve testing
+[ ] Unify configuration option names
+[ ] abl-mode for go
 [ ] abl-mode for elisp
+[ ] abl-mode for js
 [ ] Option to add an argument to test run with C-u (e.g. -x for pytest)
+
+[x] Fix failing tests & improve testing (23.09.2021)
