@@ -116,6 +116,7 @@ emacs -L . -l ert -l $HOME/.emacs.d/init.el  -l test.el --batch --eval '(let ((e
 ## TODOs
 
 [ ] Unify configuration option names
+[ ] Keybinding to run all tests
 [ ] abl-mode for go
 [ ] abl-mode for elisp
 [ ] abl-mode for js
