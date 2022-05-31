@@ -1,13 +1,15 @@
+[![MELPA](https://melpa.org/packages/abl-mode-badge.svg)](https://melpa.org/#/abl-mode)
+
 # abl-mode
 
-The abl-mode is a minor mode for python programmers who develop using virtual
+`abl-mode` is a minor mode for python programmers who develop using virtual
 environments, version control branches and unit tests.
 
 ## What does it do?
 
-Abl-mode is ideal for developers who switch development branches frequently, and
-create python virtual environments for these individual branches. When you run a
-test with `C-c t` or start a server with `C-c r`, abl-mode checks the
+`abl-mode` is ideal for developers who switch development branches frequently,
+and create python virtual environments for these individual branches. When you
+run a test with `C-c t` or start a server with `C-c r`, abl-mode checks the
 availability of a virtual environment for the branch you're on. The name of the
 virtual environment is determined according to the name of the project and the
 VCS branch. If there is no such virtual environment, the user is prompted either
@@ -17,18 +19,29 @@ the results, you can rerun the same test with `C-c u`.
 
 ## Installing
 
-To install abl-mode, put abl.el on your elisp path, and include the following in
-your emacs configuration file::
+`abl-mode` is [on melpa](https://melpa.org/#/abl-mode), so you should be able to
+install it with `package`. An easy way to automatically download on first load
+and configure `abl-mode` is using the excellent
+[use-package](https://github.com/jwiegley/use-package) tool, by including the
+following in your Emacs configuration:
 
-    (require 'abl-mode)
+```elisp
+(use-package abl-mode
+  :ensure t
+  :custom (abl-mode-install-command "pip install -r requirements.txt && python setup.py develop")
+  (abl-mode-test-path-module-class-separator ":")
+  :hook python-mode)
+```
 
-If you want to activate abl-mode automatically for python files, add the
-following to your Emacs configuration::
+### Development
 
-    (add-hook 'find-file-hooks 'abl-mode-hook)
+Check out this repository, and include the following in your Emacs configuration:
 
-You can replace find-file-hooks with python-mode-hook if you want to activate
-abl-mode only for python files.
+```elisp
+(use-package abl-mode
+  :load-path "~/projects/abl-mode"
+  :hook python-mode)
+```
 
 ## Commands and their default key bindings
 
