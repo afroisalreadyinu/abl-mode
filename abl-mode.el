@@ -132,24 +132,26 @@
   module name is used")
 (make-variable-buffer-local 'abl-mode-use-file-module)
 
+(defcustom abl-ve-name ""
+  "Name of the virtual env")
+(make-variable-buffer-local 'abl-ve-name)
+
+(defcustom abl-mode-shell-name "ABL-SHELL"
+  "Name of shell")
+(make-variable-buffer-local 'abl-mode-shell-name)
+
+
 ;; <<----------------  Here ends the customization -------------->>
 
 (defvar abl-package-base ""
   "Base directory of the package")
 (make-variable-buffer-local 'abl-package-base)
 
-(defvar abl-ve-name ""
-  "Name of the virtual env")
-(make-variable-buffer-local 'abl-ve-name)
-
 (defvar abl-mode-branch "master"
   "The branch you are working on.When abl-mode is started, it is
   set to the name of the directory in which you are for svn, the
   git branch if you're on git.")
 (make-variable-buffer-local 'abl-mode-branch)
-
-(defvar abl-mode-shell-name "ABL-SHELL")
-(make-variable-buffer-local 'abl-mode-shell-name)
 
 (defvar abl-mode-project-name "web"
   "The name of the project. ")
@@ -172,7 +174,8 @@
 
 (defun abl-find-base-dir (path)
   (or (locate-dominating-file path "setup.py")
-      (locate-dominating-file path "requirements.txt")))
+      (locate-dominating-file path "requirements.txt")
+      (locate-dominating-file path "pyproject.toml")))
 
 (defun abl-capitalized? (strng)
   (s-uppercase? (substring strng 0 1)))
