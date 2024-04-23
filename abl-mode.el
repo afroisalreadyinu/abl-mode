@@ -75,8 +75,10 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c t") 'abl-mode-run-test-at-point)
     (define-key map (kbd "C-c u") 'abl-mode-rerun-last-test)
-    (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
-    (define-key map (kbd "C-c m") 'abl-mode-open-module)
+    (define-key map (kbd "C-c f") 'abl-mode-format-file)
+    ;; These keybindings for future features make sense
+    ;; (define-key map (kbd "C-c o") 'abl-mode-open-python-path-at-point)
+    ;; (define-key map (kbd "C-c m") 'abl-mode-open-module)
     map)
   "The keymap for abl-mode")
 
@@ -118,6 +120,10 @@
 (defcustom abl-mode-test-file-regexp ".*_tests.py"
   "regexp used to check whether a file is a test file")
 (make-variable-buffer-local 'abl-mode-test-file-regexp)
+
+(defcustom abl-mode-format-command "black %1$s && isort --profile black %1$s"
+  "Command to run to format a Python file")
+(make-variable-buffer-local 'abl-mode-format-command)
 
 (defcustom abl-file-class-separator "::"
   "string used to separate class name from test file path.")
@@ -379,6 +385,15 @@ Error if none of these is true."
     (if (not last-run)
 	(message "You haven't run any tests yet.")
       (abl-mode-run-test last-run))))
+
+(defun abl-mode-format-file (&optional arg)
+  ;; Format the current file, and if called with the modifier, format whole
+  ;; project
+  (interactive "P")
+  (let ((shell-command (if (null arg) (format abl-mode-format-command
+					      (buffer-file-name))
+			 (format abl-mode-format-command "."))))
+    (abl-mode-exec-command shell-command)))
 
 (provide 'abl-mode)
 
